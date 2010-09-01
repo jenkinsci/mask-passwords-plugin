@@ -1,0 +1,26 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.jvnet.hudson.plugins</groupId>
+    <artifactId>plugin</artifactId>
+    <version>1.374</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+
+  <groupId>org.jvnet.hudson.plugins</groupId>
+  <artifactId>mask-passwords</artifactId>
+  <packaging>hpi</packaging>
+  <name>Hudson Mask Passwords Plug-in</name>
+  <description>Masks passwords that may appear in the console</description>
+  <url>http://wiki.hudson-ci.org/display/HUDSON/Mask+Passwords+Plugin</url>
+  <version>1.0-SNAPSHOT</version>
+
+  <developers>
+    <developer>
+      <id>rseguy</id>
+      <name>Romain Seguy</name>
+      <email>romain.seguy@gmail.com</email>
+    </developer>
+  </developers>
+</project>
