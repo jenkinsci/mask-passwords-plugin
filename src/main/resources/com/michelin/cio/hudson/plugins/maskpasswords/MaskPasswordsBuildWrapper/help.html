@@ -1,7 +1,8 @@
 <!--
   - The MIT License
   -
-  - Copyright (c) 2010, Manufacture Francaise des Pneumatiques Michelin, Romain Seguy
+  - Copyright (c) 2010-2011, Manufacture Francaise des Pneumatiques Michelin,
+  - Romain Seguy
   -
   - Permission is hereby granted, free of charge, to any person obtaining a copy
   - of this software and associated documentation files (the "Software"), to deal
@@ -23,14 +24,18 @@
   -->
 
 <div>
-  When enabled, allows masking passwords that may appear in the console.<br/>
-  Passwords to be masked are defined as <b>Name</b>/<b>Password</b> pairs:<ul>
-  <li><b>Password</b> is aimed at containing a password to be masked from the console.
-  Empty and blank values are not allowed (e.g. &quot;&nbsp;&quot;, etc.). This
-  field is ciphered.</li>
-  <li>If <b>Name</b> is set, then a build variable will be defined accordingly.
-  This allows accessing the password by using the variable rather than hard-coding
-  it in a field which is not ciphered (e.g. the ones of the <b>Invoke Ant</b> or
-  <b>Execute shell</b> build steps).</li>
-  </ul>
+    <p>When enabled, allows masking passwords that may appear in the console.</p>
+    <p>Passwords defined as <u>build parameters</u> (using the <b>Password
+    Parameter</b> type) are <u>automatically</u> masked.</p>
+    <p>It is also possible to mask passwords that are defined as
+    <b>Name</b>/<b>Password</b> pairs:<ul>
+    <li><b>Password</b> is aimed at containing a password to be masked from the console.
+    Empty and blank values are not allowed (e.g. &quot;&nbsp;&quot;, etc.). This
+    field is ciphered. This field can not contain variables, they won't be
+    expanded.</li>
+    <li>If <b>Name</b> is set, then a build variable will be defined accordingly.
+    This allows accessing the password by using the variable rather than hard-coding
+    it in a field which is not ciphered (e.g. the ones of the <b>Invoke Ant</b> or
+    <b>Execute shell</b> build steps).</li>
+    </ul>
 </div>

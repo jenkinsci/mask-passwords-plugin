@@ -1,7 +1,8 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2010, Manufacture Francaise des Pneumatiques Michelin, Romain Seguy
+ * Copyright (c) 2010-2011, Manufacture Francaise des Pneumatiques Michelin,
+ * Romain Seguy
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +35,9 @@ import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
+import hudson.model.ParameterValue;
+import hudson.model.ParametersAction;
+import hudson.model.PasswordParameterValue;
 import hudson.tasks.BuildWrapper;
 import hudson.tasks.BuildWrapperDescriptor;
 import hudson.util.Secret;
@@ -57,171 +61,188 @@ import org.kohsuke.stapler.DataBoundConstructor;
  */
 public final class MaskPasswordsBuildWrapper extends BuildWrapper {
 
-  /**
-   * {@code allPasswords} contains all the passwords that have to be masked.
-   */
-  private transient List<Secret> allPasswords = new ArrayList<Secret>();
-  private final List<VarPasswordPair> varPasswordPairs;
-
-  @DataBoundConstructor
-  public MaskPasswordsBuildWrapper(List<VarPasswordPair> varPasswordPairs) {
-    this.varPasswordPairs = varPasswordPairs;
-
-    if(varPasswordPairs != null) {
-      for(VarPasswordPair varPasswordPair: varPasswordPairs) {
-        allPasswords.add(varPasswordPair.getPasswordAsSecret());
-      }
-    }
-  }
-
-  @Override
-  public OutputStream decorateLogger(AbstractBuild build, OutputStream logger) {
-    return new MaskPasswordsOutputStream(logger, allPasswords);
-  }
-
-  /**
-   * Contributes the passwords defined by the user as variables that can be reused
-   * from build steps (and other places).
-   */
-  @Override
-  public void makeBuildVariables(AbstractBuild build, Map<String, String> variables) {
-    // we can't use variables.putAll() since passwords are ciphered when in varPasswordPairs
-    if(varPasswordPairs != null) {
-      for(VarPasswordPair varPasswordPair: varPasswordPairs) {
-        if(StringUtils.isNotBlank(varPasswordPair.getVar())) {
-          variables.put(varPasswordPair.getVar(), varPasswordPair.getPassword());
-        }
-      }
-    }
-  }
-
-  @Override
-  public Environment setUp(AbstractBuild build, Launcher launcher, BuildListener listener) throws IOException, InterruptedException {
-    return new Environment() {
-      // nothing to tearDown()
-    };
-  }
-
-  public List<VarPasswordPair> getVarPasswordPairs() {
-    return varPasswordPairs;
-  }
-
-  /**
-   * Represents name/password entries defined by users in their jobs.
-   */
-  public static class VarPasswordPair {
-
-    private final String var;
-    private final Secret password;
+    /**
+     * {@code allPasswords} contains all the passwords that have to be masked.
+     */
+    private transient List<String> allPasswords = new ArrayList<String>();
+    private final List<VarPasswordPair> varPasswordPairs;
 
     @DataBoundConstructor
-    public VarPasswordPair(String var, String password) {
-      this.var = var;
-      this.password = Secret.fromString(password);
+    public MaskPasswordsBuildWrapper(List<VarPasswordPair> varPasswordPairs) {
+        this.varPasswordPairs = varPasswordPairs;
+
+        if(varPasswordPairs != null) {
+            for(VarPasswordPair varPasswordPair: varPasswordPairs) {
+                allPasswords.add(varPasswordPair.getPassword());
+            }
+        }
     }
 
-    public String getVar() {
-      return var;
+    /**
+     * This method is invoked before {@link #makeBuildVariables()} and {@link
+     * #setUp()}.
+     */
+    @Override
+    public OutputStream decorateLogger(AbstractBuild build, OutputStream logger) {
+        // find build parameters which are passwords (PasswordParameterValue)
+        ParametersAction params = build.getAction(ParametersAction.class);
+        if(params != null) {
+            for(ParameterValue param: params) {
+                if(param instanceof PasswordParameterValue
+                        // code specific to Manufacture Francaise des Pneumatiques Michelin
+                        || param.getClass().getName().equals("com.michelin.cio.hudson.plugins.passwordparam.PasswordParameterValue")) {
+                    String password = param.createVariableResolver(build).resolve(param.getName());
+                    allPasswords.add(password);
+                }
+            }
+        }
+
+        return new MaskPasswordsOutputStream(logger, allPasswords);
     }
 
-    public String getPassword() {
-      return Secret.toString(password);
-    }
-
-    public Secret getPasswordAsSecret() {
-      return password;
-    }
-
-  }
-
-  @Extension
-  public static final class DescriptorImpl extends BuildWrapperDescriptor {
-
-    public DescriptorImpl() {
-      super(MaskPasswordsBuildWrapper.class);
+    /**
+     * Contributes the passwords defined by the user as variables that can be reused
+     * from build steps (and other places).
+     */
+    @Override
+    public void makeBuildVariables(AbstractBuild build, Map<String, String> variables) {
+        // we can't use variables.putAll() since passwords are ciphered when in varPasswordPairs
+        if(varPasswordPairs != null) {
+            for(VarPasswordPair varPasswordPair: varPasswordPairs) {
+                if(StringUtils.isNotBlank(varPasswordPair.getVar())) {
+                    variables.put(varPasswordPair.getVar(), varPasswordPair.getPassword());
+                }
+            }
+        }
     }
 
     @Override
-    public String getDisplayName() {
-      return new Localizable(ResourceBundleHolder.get(MaskPasswordsBuildWrapper.class), "DisplayName").toString();
+    public Environment setUp(AbstractBuild build, Launcher launcher, BuildListener listener) throws IOException, InterruptedException {
+        return new Environment() {
+            // nothing to tearDown()
+        };
     }
 
-    @Override
-    public boolean isApplicable(AbstractProject<?, ?> item) {
-      return true;
+    public List<VarPasswordPair> getVarPasswordPairs() {
+        return varPasswordPairs;
     }
 
-  }
+    /**
+     * Represents name/password entries defined by users in their jobs.
+     */
+    public static class VarPasswordPair {
 
-  /**
-   * We need this converter to handle marshalling/unmarshalling of the build
-   * wrapper data: Relying on the default mechanism doesn't make it (because
-   * {@link Secret} doesn't have the {@code DataBoundConstructor} annotation).
-   */
-  public static final class ConverterImpl implements Converter {
+        private final String var;
+        private final Secret password;
 
-    private final static String VAR_PASSWORD_PAIRS_NODE = "varPasswordPairs";
-    private final static String VAR_PASSWORD_PAIR_NODE = "varPasswordPair";
-    private final static String VAR_ATT = "var";
-    private final static String PASSWORD_ATT = "password";
-
-    public boolean canConvert(Class clazz) {
-      return clazz.equals(MaskPasswordsBuildWrapper.class);
-    }
-
-    public void marshal(Object o, HierarchicalStreamWriter writer, MarshallingContext mc) {
-      MaskPasswordsBuildWrapper maskPasswordsBuildWrapper = (MaskPasswordsBuildWrapper) o;
-
-      // varPasswordPairs
-      if(maskPasswordsBuildWrapper.getVarPasswordPairs() != null) {
-        writer.startNode(VAR_PASSWORD_PAIRS_NODE);
-        for(VarPasswordPair varPasswordPair: maskPasswordsBuildWrapper.getVarPasswordPairs()) {
-          // blank passwords are skipped
-          if(StringUtils.isBlank(varPasswordPair.getPassword())) {
-            continue;
-          }
-          writer.startNode(VAR_PASSWORD_PAIR_NODE);
-          writer.addAttribute(VAR_ATT, varPasswordPair.getVar());
-          writer.addAttribute(PASSWORD_ATT, varPasswordPair.getPasswordAsSecret().getEncryptedValue());
-          writer.endNode();
+        @DataBoundConstructor
+        public VarPasswordPair(String var, String password) {
+            this.var = var;
+            this.password = Secret.fromString(password);
         }
-        writer.endNode();
-      }
+
+        public String getVar() {
+            return var;
+        }
+
+        public String getPassword() {
+            return Secret.toString(password);
+        }
+
+        public Secret getPasswordAsSecret() {
+            return password;
+        }
+        
     }
 
-    public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext uc) {
-      List<VarPasswordPair> varPasswordPairs = new ArrayList<VarPasswordPair>();
+    @Extension
+    public static final class DescriptorImpl extends BuildWrapperDescriptor {
 
-      while(reader.hasMoreChildren()) {
-        reader.moveDown();
-        if(reader.getNodeName().equals(VAR_PASSWORD_PAIRS_NODE)) {
-          while(reader.hasMoreChildren()) {
-            reader.moveDown();
-            if(reader.getNodeName().equals(VAR_PASSWORD_PAIR_NODE)) {
-              varPasswordPairs.add(new VarPasswordPair(
-                      reader.getAttribute(VAR_ATT),
-                      reader.getAttribute(PASSWORD_ATT)));
+        public DescriptorImpl() {
+            super(MaskPasswordsBuildWrapper.class);
+        }
+
+        @Override
+        public String getDisplayName() {
+            return new Localizable(ResourceBundleHolder.get(MaskPasswordsBuildWrapper.class), "DisplayName").toString();
+        }
+
+        @Override
+        public boolean isApplicable(AbstractProject<?, ?> item) {
+            return true;
+        }
+
+    }
+
+    /**
+     * We need this converter to handle marshalling/unmarshalling of the build
+     * wrapper data: Relying on the default mechanism doesn't make it (because
+     * {@link Secret} doesn't have the {@code DataBoundConstructor} annotation).
+     */
+    public static final class ConverterImpl implements Converter {
+
+        private final static String VAR_PASSWORD_PAIRS_NODE = "varPasswordPairs";
+        private final static String VAR_PASSWORD_PAIR_NODE = "varPasswordPair";
+        private final static String VAR_ATT = "var";
+        private final static String PASSWORD_ATT = "password";
+
+        public boolean canConvert(Class clazz) {
+            return clazz.equals(MaskPasswordsBuildWrapper.class);
+        }
+
+        public void marshal(Object o, HierarchicalStreamWriter writer, MarshallingContext mc) {
+            MaskPasswordsBuildWrapper maskPasswordsBuildWrapper = (MaskPasswordsBuildWrapper) o;
+
+            // varPasswordPairs
+            if(maskPasswordsBuildWrapper.getVarPasswordPairs() != null) {
+                writer.startNode(VAR_PASSWORD_PAIRS_NODE);
+                for(VarPasswordPair varPasswordPair: maskPasswordsBuildWrapper.getVarPasswordPairs()) {
+                    // blank passwords are skipped
+                    if(StringUtils.isBlank(varPasswordPair.getPassword())) {
+                        continue;
+                    }
+                    writer.startNode(VAR_PASSWORD_PAIR_NODE);
+                    writer.addAttribute(VAR_ATT, varPasswordPair.getVar());
+                    writer.addAttribute(PASSWORD_ATT, varPasswordPair.getPasswordAsSecret().getEncryptedValue());
+                    writer.endNode();
+                }
+                writer.endNode();
             }
-            else {
-              LOGGER.log(Level.WARNING,
-                      "Encountered incorrect node name: Expected \"" + VAR_PASSWORD_PAIR_NODE + "\", got \"{0}\"",
-                      reader.getNodeName());
-            }
-            reader.moveUp();
-          }
-          reader.moveUp();
         }
-        else {
-          LOGGER.log(Level.WARNING,
-                  "Encountered incorrect node name: \"{0}\"", reader.getNodeName());
-        }
-      }
 
-      return new MaskPasswordsBuildWrapper(varPasswordPairs);
+        public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext uc) {
+            List<VarPasswordPair> varPasswordPairs = new ArrayList<VarPasswordPair>();
+
+            while(reader.hasMoreChildren()) {
+                reader.moveDown();
+                if(reader.getNodeName().equals(VAR_PASSWORD_PAIRS_NODE)) {
+                    while(reader.hasMoreChildren()) {
+                        reader.moveDown();
+                        if(reader.getNodeName().equals(VAR_PASSWORD_PAIR_NODE)) {
+                            varPasswordPairs.add(new VarPasswordPair(
+                                    reader.getAttribute(VAR_ATT),
+                                    reader.getAttribute(PASSWORD_ATT)));
+                        }
+                        else {
+                            LOGGER.log(Level.WARNING,
+                                    "Encountered incorrect node name: Expected \"" + VAR_PASSWORD_PAIR_NODE + "\", got \"{0}\"",
+                                    reader.getNodeName());
+                        }
+                        reader.moveUp();
+                    }
+                    reader.moveUp();
+                }
+                else {
+                    LOGGER.log(Level.WARNING,
+                            "Encountered incorrect node name: \"{0}\"", reader.getNodeName());
+                }
+            }
+
+            return new MaskPasswordsBuildWrapper(varPasswordPairs);
+        }
+
     }
 
-  }
-
-  private static final Logger LOGGER = Logger.getLogger(MaskPasswordsBuildWrapper.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(MaskPasswordsBuildWrapper.class.getName());
 
 }

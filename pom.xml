@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.jvnet.hudson.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>1.374</version>
+    <version>1.375</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -13,7 +13,7 @@
   <packaging>hpi</packaging>
   <name>Hudson Mask Passwords Plug-in</name>
   <description>Masks passwords that may appear in the console</description>
-  <url>http://wiki.hudson-ci.org/display/HUDSON/Mask+Passwords+Plugin</url>
+  <url>http://wiki.jenkins-ci.org/display/JENKINS/Mask+Passwords+Plugin</url>
   <version>1.1-SNAPSHOT</version>
 
   <developers>
@@ -23,4 +23,31 @@
       <email>romain.seguy@gmail.com</email>
     </developer>
   </developers>
+
+  <!-- see http://groups.google.com/group/jenkinsci-dev/browse_thread/thread/83e34c639eec470a for the rationale behind this -->
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-release-plugin</artifactId>
+        <configuration>
+          <goals>deploy</goals>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <!-- see http://groups.google.com/group/jenkinsci-dev/browse_thread/thread/83e34c639eec470a for the rationale behind this -->
+  <scm>
+    <connection>scm:svn:https://guest@svn.jenkins-ci.org/trunk/hudson/plugins/mask-passwords/</connection>
+    <developerConnection>scm:svn:https://svn.jenkins-ci.org/trunk/hudson/plugins/mask-passwords/</developerConnection>
+    <url>https://hudson.dev.java.net/source/browse/hudson/trunk/hudson/plugins/mask-passwords</url>
+  </scm>
+
+  <!-- see http://groups.google.com/group/jenkinsci-dev/browse_thread/thread/6ea03cf2b527376c for the rationale behind this -->
+  <distributionManagement>
+    <repository>
+      <id>java.net-m2-repository</id>
+      <url>http://maven.jenkins-ci.org/content/repositories/releases/</url>
+    </repository>
+  </distributionManagement>
 </project>

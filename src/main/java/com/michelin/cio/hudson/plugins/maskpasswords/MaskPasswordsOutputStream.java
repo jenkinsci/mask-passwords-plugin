@@ -1,7 +1,8 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2010, Manufacture Francaise des Pneumatiques Michelin, Romain Seguy
+ * Copyright (c) 2010-2011, Manufacture Francaise des Pneumatiques Michelin,
+ * Romain Seguy
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,12 +26,10 @@
 package com.michelin.cio.hudson.plugins.maskpasswords;
 
 import hudson.console.LineTransformationOutputStream;
-import hudson.util.Secret;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collection;
 import java.util.regex.Pattern;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * Custom output stream which masks a predefined set of passwords.
@@ -39,44 +38,40 @@ import org.apache.commons.lang.StringUtils;
  */
 public class MaskPasswordsOutputStream extends LineTransformationOutputStream {
 
-  private final static String MASKED_PASSWORD = "********";
+    private final static String MASKED_PASSWORD = "********";
 
-  private final OutputStream logger;
-  private final Pattern passwordsAsPattern;
+    private final OutputStream logger;
+    private final Pattern passwordsAsPattern;
 
-  /**
-   * @param logger The output stream to which this {@link MaskPasswordsOutputStream}
-   *               will write to
-   * @param passwords A collection of {@link Secret}s to be masked
-   */
-  public MaskPasswordsOutputStream(OutputStream logger, Collection<Secret> passwords) {
-    this.logger = logger;
+    /**
+     * @param logger The output stream to which this {@link MaskPasswordsOutputStream}
+     *               will write to
+     * @param passwords A collection of {@link String}s to be masked
+     */
+    public MaskPasswordsOutputStream(OutputStream logger, Collection<String> passwords) {
+        this.logger = logger;
 
-    // passwords are aggregated into a regex which is compiled as a pattern
-    // for efficiency
-    StringBuilder regex = new StringBuilder();
-    if(passwords != null) {
-      regex.append('(');
-      for(Secret password: passwords) {
-        // blank passwords are skipped
-        if(StringUtils.isBlank(Secret.toString(password))) {
-          continue;
+        // passwords are aggregated into a regex which is compiled as a pattern
+        // for efficiency
+        StringBuilder regex = new StringBuilder();
+        if(passwords != null) {
+            regex.append('(');
+            for(String password: passwords) {
+                regex.append(
+                        password.replace("(", "\\(").replace("|", "\\|").replace(")", "\\)"));
+                regex.append('|');
+            }
+            regex.deleteCharAt(regex.length()-1); // removes the last unuseful pipe
+            regex.append(')');
         }
-        regex.append(
-                Secret.toString(password).replace("(", "\\(").replace("|", "\\|").replace(")", "\\)"));
-        regex.append('|');
-      }
-      regex.deleteCharAt(regex.length()-1); // removes the last unuseful pipe
-      regex.append(')');
+        passwordsAsPattern = Pattern.compile(regex.toString());
     }
-    passwordsAsPattern = Pattern.compile(regex.toString());
-  }
 
-  @Override
-  protected void eol(byte[] bytes, int len) throws IOException {
-    String line = new String(bytes, 0, len);
-    line = passwordsAsPattern.matcher(line).replaceAll(MASKED_PASSWORD);
-    logger.write(line.getBytes());
-  }
+    @Override
+    protected void eol(byte[] bytes, int len) throws IOException {
+        String line = new String(bytes, 0, len);
+        line = passwordsAsPattern.matcher(line).replaceAll(MASKED_PASSWORD);
+        logger.write(line.getBytes());
+    }
 
 }
