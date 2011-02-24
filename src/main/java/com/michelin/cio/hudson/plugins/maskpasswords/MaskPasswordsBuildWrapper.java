@@ -37,7 +37,6 @@ import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
-import hudson.model.PasswordParameterValue;
 import hudson.tasks.BuildWrapper;
 import hudson.tasks.BuildWrapperDescriptor;
 import hudson.util.Secret;
@@ -49,10 +48,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.jvnet.localizer.Localizable;
 import org.jvnet.localizer.ResourceBundleHolder;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.StaplerRequest;
 
 /**
  * Build wrapper that alters the console so that passwords don't get displayed.
@@ -84,13 +86,13 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
      */
     @Override
     public OutputStream decorateLogger(AbstractBuild build, OutputStream logger) {
+        MaskPasswordsConfig config = MaskPasswordsConfig.getInstance();
+
         // find build parameters which are passwords (PasswordParameterValue)
         ParametersAction params = build.getAction(ParametersAction.class);
         if(params != null) {
-            for(ParameterValue param: params) {
-                if(param instanceof PasswordParameterValue
-                        // code specific to Manufacture Francaise des Pneumatiques Michelin
-                        || param.getClass().getName().equals("com.michelin.cio.hudson.plugins.passwordparam.PasswordParameterValue")) {
+            for(ParameterValue param : params) {
+                if(config.isMasked(param.getClass().getName())) {
                     String password = param.createVariableResolver(build).resolve(param.getName());
                     allPasswords.add(password);
                 }
@@ -144,7 +146,6 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
         public String getVar() {
             return var;
         }
-
         public String getPassword() {
             return Secret.toString(password);
         }
@@ -158,8 +159,45 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
     @Extension
     public static final class DescriptorImpl extends BuildWrapperDescriptor {
 
+        private MaskPasswordsConfig config;
+
         public DescriptorImpl() {
             super(MaskPasswordsBuildWrapper.class);
+        }
+
+        /**
+         * @since 2.5
+         */
+        @Override
+        public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
+            try {
+                getConfig().clear();
+
+                LOGGER.fine("Processing the maskedParamDefs and selectedMaskedParamDefs JSON objects");
+
+                JSONArray paramDefinitions = req.getSubmittedForm().getJSONArray("maskedParamDefs");
+                JSONArray selectedParamDefinitions = req.getSubmittedForm().getJSONArray("selectedMaskedParamDefs");
+                for(int i = 0; i < selectedParamDefinitions.size(); i++) {
+                    if(selectedParamDefinitions.getBoolean(i)) {
+                        getConfig().addMaskedPasswordParameterDefinition(paramDefinitions.getString(i));
+                    }
+                }
+
+                MaskPasswordsConfig.save(getConfig());
+
+                return true;
+            }
+            catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "Failed to save Mask Passwords plugin configuration", e);
+                return false;
+            }
+        }
+
+        /**
+         * @since 2.5
+         */
+        public MaskPasswordsConfig getConfig() {
+            return MaskPasswordsConfig.getInstance();
         }
 
         @Override
