@@ -57,8 +57,7 @@ public class MaskPasswordsOutputStream extends LineTransformationOutputStream {
         if(passwords != null) {
             regex.append('(');
             for(String password: passwords) {
-                regex.append(
-                        password.replace("(", "\\(").replace("|", "\\|").replace(")", "\\)"));
+                regex.append(Pattern.quote(password));
                 regex.append('|');
             }
             regex.deleteCharAt(regex.length()-1); // removes the last unuseful pipe
