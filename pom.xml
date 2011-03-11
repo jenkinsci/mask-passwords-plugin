@@ -11,7 +11,7 @@
   <groupId>org.jvnet.hudson.plugins</groupId>
   <artifactId>mask-passwords</artifactId>
   <packaging>hpi</packaging>
-  <name>Mask Passwords Plug-in</name>
+  <name>Mask Passwords Plugin</name>
   <description>Masks passwords that may appear in the console</description>
   <url>http://wiki.jenkins-ci.org/display/JENKINS/Mask+Passwords+Plugin</url>
   <version>2.5-SNAPSHOT</version>

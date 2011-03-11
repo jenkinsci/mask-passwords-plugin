@@ -24,6 +24,15 @@
   -->
 
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+    <tr>
+        <td/>
+        <td colspan="2">
+            <div class="help" style="display:block;">
+                ${%HowToConfigureThisPlugin}
+            </div>
+        </td>
+        <td/>
+    </tr>
     <f:entry field="varPasswordPairs">
         <f:repeatable name="varPasswordPairs" items="${instance.varPasswordPairs}" var="varPasswordPair">
             <table width="100%">
