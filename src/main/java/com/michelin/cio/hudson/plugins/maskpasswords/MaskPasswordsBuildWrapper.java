@@ -75,7 +75,10 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
 
         if(varPasswordPairs != null) {
             for(VarPasswordPair varPasswordPair: varPasswordPairs) {
-                allPasswords.add(varPasswordPair.getPassword());
+                String password = varPasswordPair.getPassword();
+                if(StringUtils.isNotBlank(password)) {
+                    allPasswords.add(password);
+                }
             }
         }
     }
@@ -94,7 +97,9 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
             for(ParameterValue param : params) {
                 if(config.isMasked(param.getClass().getName())) {
                     String password = param.createVariableResolver(build).resolve(param.getName());
-                    allPasswords.add(password);
+                    if(StringUtils.isNotBlank(password)) {
+                        allPasswords.add(password);
+                    }
                 }
             }
         }
@@ -158,8 +163,6 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
 
     @Extension
     public static final class DescriptorImpl extends BuildWrapperDescriptor {
-
-        private MaskPasswordsConfig config;
 
         public DescriptorImpl() {
             super(MaskPasswordsBuildWrapper.class);
