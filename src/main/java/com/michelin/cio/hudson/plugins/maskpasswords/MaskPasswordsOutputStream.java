@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collection;
 import java.util.regex.Pattern;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Custom output stream which masks a predefined set of passwords.
@@ -51,26 +52,40 @@ public class MaskPasswordsOutputStream extends LineTransformationOutputStream {
     public MaskPasswordsOutputStream(OutputStream logger, Collection<String> passwords) {
         this.logger = logger;
 
-        // passwords are aggregated into a regex which is compiled as a pattern
-        // for efficiency
-        StringBuilder regex = new StringBuilder();
-        if(passwords != null) {
-            regex.append('(');
+        if(passwords != null && passwords.size() > 0) {
+            // passwords are aggregated into a regex which is compiled as a pattern
+            // for efficiency
+            StringBuilder regex = new StringBuilder().append('(');
+
+            int nbMaskedPasswords = 0;
             for(String password: passwords) {
-                regex.append(Pattern.quote(password));
-                regex.append('|');
+                if(StringUtils.isNotEmpty(password)) { // we must not handle empty passwords
+                    regex.append(Pattern.quote(password));
+                    regex.append('|');
+                    nbMaskedPasswords++;
+                }
             }
-            regex.deleteCharAt(regex.length()-1); // removes the last unuseful pipe
-            regex.append(')');
+            if(nbMaskedPasswords++ >= 1) { // is there at least one password to mask?
+                regex.deleteCharAt(regex.length()-1); // removes the last unuseful pipe
+                regex.append(')');
+                passwordsAsPattern = Pattern.compile(regex.toString());
+            }
+            else { // no passwords to hide
+                passwordsAsPattern = null;
+            }
         }
-        passwordsAsPattern = Pattern.compile(regex.toString());
+        else { // no passwords to hide
+            passwordsAsPattern = null;
+        }
     }
 
     @Override
     protected void eol(byte[] bytes, int len) throws IOException {
-        String line = new String(bytes, 0, len);
-        line = passwordsAsPattern.matcher(line).replaceAll(MASKED_PASSWORD);
-        logger.write(line.getBytes());
+        if(passwordsAsPattern != null) {
+            String line = new String(bytes, 0, len);
+            line = passwordsAsPattern.matcher(line).replaceAll(MASKED_PASSWORD);
+            logger.write(line.getBytes());
+        }
     }
 
 }
