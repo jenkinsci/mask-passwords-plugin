@@ -26,13 +26,11 @@
 package com.michelin.cio.hudson.plugins.maskpasswords;
 
 import hudson.ExtensionList;
-import hudson.PluginManager;
 import hudson.XmlFile;
 import hudson.model.Hudson;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterDefinition.ParameterDescriptor;
 import hudson.model.ParameterValue;
-import hudson.model.PasswordParameterDefinition;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -75,7 +73,8 @@ public class MaskPasswordsConfig {
         maskPasswordsParamDefClasses = new LinkedHashSet<String>();
 
         // default values for the first time the config is created
-        addMaskedPasswordParameterDefinition(PasswordParameterDefinition.class.getName());
+        addMaskedPasswordParameterDefinition(hudson.model.PasswordParameterDefinition.class.getName());
+        addMaskedPasswordParameterDefinition(com.michelin.cio.hudson.plugins.passwordparam.PasswordParameterDefinition.class.getName());
     }
 
     /**
