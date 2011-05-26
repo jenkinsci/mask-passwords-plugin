@@ -14,7 +14,7 @@
   <name>Mask Passwords Plugin</name>
   <description>Masks passwords that may appear in the console</description>
   <url>http://wiki.jenkins-ci.org/display/JENKINS/Mask+Passwords+Plugin</url>
-  <version>2.6.1-SNAPSHOT</version>
+  <version>2.6.1</version>
 
   <developers>
     <developer>
@@ -38,9 +38,9 @@
 
   <!-- see http://groups.google.com/group/jenkinsci-dev/browse_thread/thread/83e34c639eec470a for the rationale behind this -->
   <scm>
-    <connection>scm:svn:https://guest@svn.jenkins-ci.org/trunk/hudson/plugins/mask-passwords/</connection>
-    <developerConnection>scm:svn:https://svn.jenkins-ci.org/trunk/hudson/plugins/mask-passwords/</developerConnection>
-    <url>https://hudson.dev.java.net/source/browse/hudson/trunk/hudson/plugins/mask-passwords</url>
+    <connection>scm:svn:https://guest@svn.jenkins-ci.org/tags/mask-passwords-2.6.1</connection>
+    <developerConnection>scm:svn:https://svn.jenkins-ci.org/tags/mask-passwords-2.6.1</developerConnection>
+    <url>https://hudson.dev.java.net/source/browse/hudson/tags/mask-passwords-2.6.1</url>
   </scm>
 
   <!-- see http://groups.google.com/group/jenkinsci-dev/browse_thread/thread/6ea03cf2b527376c for the rationale behind this -->
