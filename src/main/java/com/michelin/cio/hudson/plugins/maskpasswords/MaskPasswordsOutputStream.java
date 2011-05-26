@@ -81,11 +81,11 @@ public class MaskPasswordsOutputStream extends LineTransformationOutputStream {
 
     @Override
     protected void eol(byte[] bytes, int len) throws IOException {
+        String line = new String(bytes, 0, len);
         if(passwordsAsPattern != null) {
-            String line = new String(bytes, 0, len);
             line = passwordsAsPattern.matcher(line).replaceAll(MASKED_PASSWORD);
-            logger.write(line.getBytes());
         }
+        logger.write(line.getBytes());
     }
 
 }
