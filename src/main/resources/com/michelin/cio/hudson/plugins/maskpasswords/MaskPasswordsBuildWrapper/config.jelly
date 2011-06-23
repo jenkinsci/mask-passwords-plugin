@@ -27,7 +27,7 @@
     <tr>
         <td/>
         <td colspan="2">
-            <div class="help" style="display:block;">
+            <div class="help" style="display:block;background-color:#F7F1DA;">
                 ${%HowToConfigureThisPlugin}
             </div>
         </td>
