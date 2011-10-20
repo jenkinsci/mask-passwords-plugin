@@ -1,8 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2011, Manufacture Francaise des Pneumatiques Michelin,
- * Romain Seguy
+ * Copyright (c) 2011, Manufacture Francaise des Pneumatiques Michelin, Romain Seguy
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +24,7 @@
 
 package com.michelin.cio.hudson.plugins.maskpasswords;
 
+import com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper.VarPasswordPair;
 import hudson.ExtensionList;
 import hudson.XmlFile;
 import hudson.model.Hudson;
@@ -44,6 +44,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.StaplerRequest;
 
 /**
@@ -68,6 +69,12 @@ public class MaskPasswordsConfig {
      * builds' console.
      */
     private transient Set<String> maskPasswordsParamValueClasses;
+    /**
+     * Users can define name/password pairs at the global level to share common
+     * passwords with several jobs.
+     * @since 2.7
+     */
+    private List<VarPasswordPair> globalVarPasswordPairs;
 
     public MaskPasswordsConfig() {
         maskPasswordsParamDefClasses = new LinkedHashSet<String>();
@@ -75,6 +82,24 @@ public class MaskPasswordsConfig {
         // default values for the first time the config is created
         addMaskedPasswordParameterDefinition(hudson.model.PasswordParameterDefinition.class.getName());
         addMaskedPasswordParameterDefinition(com.michelin.cio.hudson.plugins.passwordparam.PasswordParameterDefinition.class.getName());
+        
+        globalVarPasswordPairs = new ArrayList<VarPasswordPair>(); // order matters for display purposes
+    }
+
+    /**
+     * Adds a name/password pair at the global level.
+     * 
+     * <p>If either name or password is blank (as defined per the Commons Lang
+     * library), then the pair is not added.</p>
+     * 
+     * @since 2.7
+     */
+    public void addGlobalVarPasswordPair(VarPasswordPair varPasswordPair) {
+        // blank values are forbidden
+        if(StringUtils.isBlank(varPasswordPair.getVar()) || StringUtils.isBlank(varPasswordPair.getPassword())) {
+            return;
+        }
+        globalVarPasswordPairs.add(varPasswordPair);
     }
 
     /**
@@ -88,6 +113,7 @@ public class MaskPasswordsConfig {
 
     public void clear() {
         maskPasswordsParamDefClasses.clear();
+        globalVarPasswordPairs.clear();
     }
 
     public static MaskPasswordsConfig getInstance() {
@@ -99,6 +125,26 @@ public class MaskPasswordsConfig {
 
     private static XmlFile getConfigFile() {
         return new XmlFile(new File(Hudson.getInstance().getRootDir(), CONFIG_FILE));
+    }
+
+    /**
+     * Returns the list of name/password pairs defined at the global level.
+     * 
+     * <p>Modifications broughts to the returned list has no impact on this
+     * configuration (the returned value is a copy). Also, the list can be
+     * empty but never {@code null}.</p>
+     * 
+     * @since 2.7
+     */
+    public List<VarPasswordPair> getGlobalVarPasswordPairs() {
+        List<VarPasswordPair> r = new ArrayList<VarPasswordPair>(globalVarPasswordPairs.size());
+        
+        // deep copy
+        for(VarPasswordPair varPasswordPair: globalVarPasswordPairs) {
+            r.add((VarPasswordPair) varPasswordPair.clone());
+        }
+        
+        return r;
     }
 
     /**

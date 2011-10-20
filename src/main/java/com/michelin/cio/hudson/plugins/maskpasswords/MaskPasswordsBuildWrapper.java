@@ -73,6 +73,12 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
     public MaskPasswordsBuildWrapper(List<VarPasswordPair> varPasswordPairs) {
         this.varPasswordPairs = varPasswordPairs;
 
+        // global passwords
+        List<VarPasswordPair> globalVarPasswordPairs = MaskPasswordsConfig.getInstance().getGlobalVarPasswordPairs();
+        for(VarPasswordPair globalVarPasswordPair: globalVarPasswordPairs) {
+            allPasswords.add(globalVarPasswordPair.getPassword());
+        }
+
         if(varPasswordPairs != null) {
             for(VarPasswordPair varPasswordPair: varPasswordPairs) {
                 String password = varPasswordPair.getPassword();
@@ -113,8 +119,17 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
      */
     @Override
     public void makeBuildVariables(AbstractBuild build, Map<String, String> variables) {
+        // global var/password pairs
+        MaskPasswordsConfig config = MaskPasswordsConfig.getInstance();
+        List<VarPasswordPair> globalVarPasswordPairs = config.getGlobalVarPasswordPairs();
         // we can't use variables.putAll() since passwords are ciphered when in varPasswordPairs
+        for(VarPasswordPair globalVarPasswordPair: globalVarPasswordPairs) {
+            variables.put(globalVarPasswordPair.getVar(), globalVarPasswordPair.getPassword());
+        }
+
+        // job's var/password pairs
         if(varPasswordPairs != null) {
+            // cf. comment above
             for(VarPasswordPair varPasswordPair: varPasswordPairs) {
                 if(StringUtils.isNotBlank(varPasswordPair.getVar())) {
                     variables.put(varPasswordPair.getVar(), varPasswordPair.getPassword());
@@ -136,8 +151,10 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
 
     /**
      * Represents name/password entries defined by users in their jobs.
+     * <p>Equality and hashcode are based on {@code var} only, not
+     * {@code password}.</p>
      */
-    public static class VarPasswordPair {
+    public static class VarPasswordPair implements Cloneable {
 
         private final String var;
         private final Secret password;
@@ -148,9 +165,30 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
             this.password = Secret.fromString(password);
         }
 
+        @Override
+        public Object clone() {
+            return new VarPasswordPair(getVar(), getPassword());
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if(obj == null) {
+                return false;
+            }
+            if(getClass() != obj.getClass()) {
+                return false;
+            }
+            final VarPasswordPair other = (VarPasswordPair) obj;
+            if((this.var == null) ? (other.var != null) : !this.var.equals(other.var)) {
+                return false;
+            }
+            return true;
+        }
+
         public String getVar() {
             return var;
         }
+
         public String getPassword() {
             return Secret.toString(password);
         }
@@ -158,12 +196,19 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
         public Secret getPasswordAsSecret() {
             return password;
         }
-        
+
+        @Override
+        public int hashCode() {
+            int hash = 3;
+            hash = 67 * hash + (this.var != null ? this.var.hashCode() : 0);
+            return hash;
+        }
+
     }
 
     @Extension
     public static final class DescriptorImpl extends BuildWrapperDescriptor {
-
+        
         public DescriptorImpl() {
             super(MaskPasswordsBuildWrapper.class);
         }
@@ -178,12 +223,21 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
 
                 LOGGER.fine("Processing the maskedParamDefs and selectedMaskedParamDefs JSON objects");
 
+                // parameter definitions to be automatically masked
                 JSONArray paramDefinitions = req.getSubmittedForm().getJSONArray("maskedParamDefs");
                 JSONArray selectedParamDefinitions = req.getSubmittedForm().getJSONArray("selectedMaskedParamDefs");
                 for(int i = 0; i < selectedParamDefinitions.size(); i++) {
                     if(selectedParamDefinitions.getBoolean(i)) {
                         getConfig().addMaskedPasswordParameterDefinition(paramDefinitions.getString(i));
                     }
+                }
+
+                // global var/password pairs
+                JSONArray jSONArray = req.getSubmittedForm().getJSONArray("globalVarPasswordPairs");
+                for(int i = 0; i < jSONArray.size(); i++) {
+                    getConfig().addGlobalVarPasswordPair(new VarPasswordPair(
+                            jSONArray.getJSONObject(i).getString("var"),
+                            jSONArray.getJSONObject(i).getString("password")));
                 }
 
                 MaskPasswordsConfig.save(getConfig());

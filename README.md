@@ -1,6 +1,6 @@
 Mask Passwords plugin
 =====================
-Copyright &copy; 2010-2011, Manufacture Française des Pneumatiques Michelin, Romain Seguy. Licensed under [MIT License][0].
+Copyright &copy; 2010-2011, Manufacture Francaise des Pneumatiques Michelin, Romain Seguy. Licensed under [MIT License][0].
 
 About this plugin
 -----------------

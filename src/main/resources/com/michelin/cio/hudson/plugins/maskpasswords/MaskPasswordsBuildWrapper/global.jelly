@@ -24,12 +24,33 @@
   -->
 
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-    <f:section title="${%Mask Passwords Configuration}">
+    <!-- parameter definitions to be automatically masked -->
+    <f:section title="${%ParameterDefinitions}">
         <j:forEach var="paramDef" items="${descriptor.config.parameterDefinitions}">
             <f:entry title="${paramDef.value}">
                 <input type="hidden" name="maskedParamDefs" value="${paramDef.key}"/>
                 <f:checkbox name="selectedMaskedParamDefs" checked="${descriptor.config.isSelected(paramDef.key)}"/>
             </f:entry>
         </j:forEach>
+    </f:section>
+    <!-- global var/password pairs -->
+    <f:section title="${%GlobalVarPasswordPairs}">
+        <f:entry field="globalVarPasswordPairs">
+            <f:repeatable name="globalVarPasswordPairs" items="${descriptor.config.globalVarPasswordPairs}" var="globalVarPasswordPair">
+                <table width="100%">
+                    <tr>
+                        <td width="10%" align="right">${%Name}</td>
+                        <td width="30%">
+                            <f:textbox name="globalVarPasswordPair.var" value="${!empty globalVarPasswordPair.var?globalVarPasswordPair.var:''}"/>
+                        </td>
+                        <td width="10%" align="right">${%Password}</td>
+                        <td width="30%">
+                            <f:password name="globalVarPasswordPair.password" value="${!empty globalVarPasswordPair.password?globalVarPasswordPair.password:''}"/>
+                        </td>
+                        <td width="20%" align="right"><f:repeatableDeleteButton/></td>
+                    </tr>
+                </table>
+            </f:repeatable>
+        </f:entry>
     </f:section>
 </j:jelly>
