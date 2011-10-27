@@ -72,6 +72,10 @@ public class MaskPasswordsConfig {
     /**
      * Users can define name/password pairs at the global level to share common
      * passwords with several jobs.
+     * 
+     * <p>Never ever use this attribute directly: Use {@link #getGlobalVarPasswordPairsList} to avoid
+     * potential NPEs.</p>
+     * 
      * @since 2.7
      */
     private List<VarPasswordPair> globalVarPasswordPairs;
@@ -82,8 +86,6 @@ public class MaskPasswordsConfig {
         // default values for the first time the config is created
         addMaskedPasswordParameterDefinition(hudson.model.PasswordParameterDefinition.class.getName());
         addMaskedPasswordParameterDefinition(com.michelin.cio.hudson.plugins.passwordparam.PasswordParameterDefinition.class.getName());
-        
-        globalVarPasswordPairs = new ArrayList<VarPasswordPair>(); // order matters for display purposes
     }
 
     /**
@@ -99,7 +101,7 @@ public class MaskPasswordsConfig {
         if(StringUtils.isBlank(varPasswordPair.getVar()) || StringUtils.isBlank(varPasswordPair.getPassword())) {
             return;
         }
-        globalVarPasswordPairs.add(varPasswordPair);
+        getGlobalVarPasswordPairsList().add(varPasswordPair);
     }
 
     /**
@@ -113,7 +115,7 @@ public class MaskPasswordsConfig {
 
     public void clear() {
         maskPasswordsParamDefClasses.clear();
-        globalVarPasswordPairs.clear();
+        getGlobalVarPasswordPairsList().clear();
     }
 
     public static MaskPasswordsConfig getInstance() {
@@ -137,14 +139,28 @@ public class MaskPasswordsConfig {
      * @since 2.7
      */
     public List<VarPasswordPair> getGlobalVarPasswordPairs() {
-        List<VarPasswordPair> r = new ArrayList<VarPasswordPair>(globalVarPasswordPairs.size());
+        List<VarPasswordPair> r = new ArrayList<VarPasswordPair>(getGlobalVarPasswordPairsList().size());
         
         // deep copy
-        for(VarPasswordPair varPasswordPair: globalVarPasswordPairs) {
+        for(VarPasswordPair varPasswordPair: getGlobalVarPasswordPairsList()) {
             r.add((VarPasswordPair) varPasswordPair.clone());
         }
         
         return r;
+    }
+
+    /**
+     * Fixes JENKINS-11514: When {@code MaskPasswordsConfig.xml} is there but was created from
+     * version 2.6.1 (or older) of the plugin, {@link #globalVarPasswordPairs} can actually be
+     * {@code null} ==> Always use this getter to avoid NPEs.
+     * 
+     * @since 2.7.1
+     */
+    private List<VarPasswordPair> getGlobalVarPasswordPairsList() {
+        if(globalVarPasswordPairs == null) {
+            globalVarPasswordPairs = new ArrayList<VarPasswordPair>();
+        }
+        return globalVarPasswordPairs;
     }
 
     /**
