@@ -222,10 +222,11 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
                 getConfig().clear();
 
                 LOGGER.fine("Processing the maskedParamDefs and selectedMaskedParamDefs JSON objects");
+                JSONObject submittedForm = req.getSubmittedForm();
 
                 // parameter definitions to be automatically masked
-                JSONArray paramDefinitions = req.getSubmittedForm().getJSONArray("maskedParamDefs");
-                JSONArray selectedParamDefinitions = req.getSubmittedForm().getJSONArray("selectedMaskedParamDefs");
+                JSONArray paramDefinitions = submittedForm.getJSONArray("maskedParamDefs");
+                JSONArray selectedParamDefinitions = submittedForm.getJSONArray("selectedMaskedParamDefs");
                 for(int i = 0; i < selectedParamDefinitions.size(); i++) {
                     if(selectedParamDefinitions.getBoolean(i)) {
                         getConfig().addMaskedPasswordParameterDefinition(paramDefinitions.getString(i));
@@ -233,11 +234,23 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
                 }
 
                 // global var/password pairs
-                JSONArray jSONArray = req.getSubmittedForm().getJSONArray("globalVarPasswordPairs");
-                for(int i = 0; i < jSONArray.size(); i++) {
-                    getConfig().addGlobalVarPasswordPair(new VarPasswordPair(
-                            jSONArray.getJSONObject(i).getString("var"),
-                            jSONArray.getJSONObject(i).getString("password")));
+                if(submittedForm.has("globalVarPasswordPairs")) {
+                    Object o = submittedForm.get("globalVarPasswordPairs");
+
+                    if(o instanceof JSONArray) {
+                        JSONArray jsonArray = submittedForm.getJSONArray("globalVarPasswordPairs");
+                        for(int i = 0; i < jsonArray.size(); i++) {
+                            getConfig().addGlobalVarPasswordPair(new VarPasswordPair(
+                                    jsonArray.getJSONObject(i).getString("var"),
+                                    jsonArray.getJSONObject(i).getString("password")));
+                        }
+                    }
+                    else if(o instanceof JSONObject) {
+                        JSONObject jsonObject = submittedForm.getJSONObject("globalVarPasswordPairs");
+                        getConfig().addGlobalVarPasswordPair(new VarPasswordPair(
+                                jsonObject.getString("var"),
+                                jsonObject.getString("password")));
+                    }
                 }
 
                 MaskPasswordsConfig.save(getConfig());
