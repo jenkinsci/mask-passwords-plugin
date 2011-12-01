@@ -63,30 +63,11 @@ import org.kohsuke.stapler.StaplerRequest;
  */
 public final class MaskPasswordsBuildWrapper extends BuildWrapper {
 
-    /**
-     * {@code allPasswords} contains all the passwords that have to be masked.
-     */
-    private transient List<String> allPasswords = new ArrayList<String>();
     private final List<VarPasswordPair> varPasswordPairs;
 
     @DataBoundConstructor
     public MaskPasswordsBuildWrapper(List<VarPasswordPair> varPasswordPairs) {
         this.varPasswordPairs = varPasswordPairs;
-
-        // global passwords
-        List<VarPasswordPair> globalVarPasswordPairs = MaskPasswordsConfig.getInstance().getGlobalVarPasswordPairs();
-        for(VarPasswordPair globalVarPasswordPair: globalVarPasswordPairs) {
-            allPasswords.add(globalVarPasswordPair.getPassword());
-        }
-
-        if(varPasswordPairs != null) {
-            for(VarPasswordPair varPasswordPair: varPasswordPairs) {
-                String password = varPasswordPair.getPassword();
-                if(StringUtils.isNotBlank(password)) {
-                    allPasswords.add(password);
-                }
-            }
-        }
     }
 
     /**
@@ -95,7 +76,24 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
      */
     @Override
     public OutputStream decorateLogger(AbstractBuild build, OutputStream logger) {
+        List<String> allPasswords = new ArrayList<String>();  // all passwords to be masked
         MaskPasswordsConfig config = MaskPasswordsConfig.getInstance();
+
+        // global passwords
+        List<VarPasswordPair> globalVarPasswordPairs = config.getGlobalVarPasswordPairs();
+        for(VarPasswordPair globalVarPasswordPair: globalVarPasswordPairs) {
+            allPasswords.add(globalVarPasswordPair.getPassword());
+        }
+
+        // job's passwords
+        if(varPasswordPairs != null) {
+            for(VarPasswordPair varPasswordPair: varPasswordPairs) {
+                String password = varPasswordPair.getPassword();
+                if(StringUtils.isNotBlank(password)) {
+                    allPasswords.add(password);
+                }
+            }
+        }
 
         // find build parameters which are passwords (PasswordParameterValue)
         ParametersAction params = build.getAction(ParametersAction.class);
