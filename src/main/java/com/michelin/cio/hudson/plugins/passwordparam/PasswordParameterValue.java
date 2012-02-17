@@ -2,7 +2,8 @@
  * The MIT License
  *
  * Copyright (c) 2004-2009, Sun Microsystems, Inc.
- * Copyright (c) 2011, Manufacture Française des Pneumatiques Michelin, Romain Seguy
+ * Copyright (c) 2011-2012, Manufacture Francaise des Pneumatiques Michelin,
+ * Romain Seguy
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -49,20 +50,20 @@ public class PasswordParameterValue extends ParameterValue {
 
     @Override
     public void buildEnvVars(AbstractBuild<?,?> build, Map<String,String> env) {
-        env.put(name.toUpperCase(), value != null ? value.toString() : null);
+        env.put(name.toUpperCase(), value != null ? Secret.toString(value) : null);
     }
 
     @Override
     public VariableResolver<String> createVariableResolver(AbstractBuild<?, ?> build) {
         return new VariableResolver<String>() {
             public String resolve(String name) {
-                return PasswordParameterValue.this.name.equals(name) ? (value != null ? value.toString() : null) : null;
+                return PasswordParameterValue.this.name.equals(name) ? (value != null ? Secret.toString(value) : null) : null;
             }
         };
     }
 
     public String getValue() {
-        return value != null ? value.toString() : null;
+        return value != null ? Secret.toString(value) : null;
     }
     
 }
