@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2010-2011, Manufacture Francaise des Pneumatiques Michelin,
+ * Copyright (c) 2010-2012, Manufacture Francaise des Pneumatiques Michelin,
  * Romain Seguy
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -204,7 +204,7 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
 
     }
 
-    @Extension
+    @Extension(ordinal = 1000) // JENKINS-12161
     public static final class DescriptorImpl extends BuildWrapperDescriptor {
         
         public DescriptorImpl() {
