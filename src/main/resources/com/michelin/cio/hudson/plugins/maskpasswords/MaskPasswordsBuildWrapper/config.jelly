@@ -43,7 +43,7 @@
                     </td>
                     <td width="10%" align="right">${%Password}</td>
                     <td width="30%">
-                        <f:password name="varPasswordPair.password" value="${!empty varPasswordPair.password?varPasswordPair.password:''}"/>
+                        <f:password name="varPasswordPair.password" value="${varPasswordPair.passwordAsSecret}"/>
                     </td>
                     <td width="20%" align="right"><f:repeatableDeleteButton/></td>
                 </tr>
