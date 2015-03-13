@@ -135,7 +135,28 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
             }
         }
     }
+    // Thaentzler : add sensitive flag to variables to prevent clear display on JSON display
 
+    public void makeSensitiveBuildVariables(AbstractBuild build, Set<String> sensitiveVariables) {
+
+        MaskPasswordsConfig config = MaskPasswordsConfig.getInstance();
+        List<VarPasswordPair> globalVarPasswordPairs = config.getGlobalVarPasswordPairs();
+        // we can't use variables.putAll() since passwords are ciphered when in varPasswordPairs
+        for(VarPasswordPair globalVarPasswordPair: globalVarPasswordPairs) {
+            sensitiveVariables.add(globalVarPasswordPair.getVar());
+        }
+
+        // job's var/password pairs
+        if(varPasswordPairs != null) {
+            // cf. comment above
+            for(VarPasswordPair varPasswordPair: varPasswordPairs) {
+                if(StringUtils.isNotBlank(varPasswordPair.getVar())) {
+                    sensitiveVariables.add(varPasswordPair.getVar());
+                }
+            }
+        }
+    }
+    
     @Override
     public Environment setUp(AbstractBuild build, Launcher launcher, BuildListener listener) throws IOException, InterruptedException {
         return new Environment() {
