@@ -61,7 +61,10 @@ public class PasswordParameterValue extends ParameterValue {
             }
         };
     }
-
+     @Override
+    public boolean isSensitive() {
+    return true;
+    }
     public String getValue() {
         return value != null ? Secret.toString(value) : null;
     }
