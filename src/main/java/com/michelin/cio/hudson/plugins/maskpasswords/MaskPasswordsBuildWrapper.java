@@ -30,24 +30,29 @@ import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
+import hudson.EnvVars;
 import hudson.Extension;
+import hudson.FilePath;
 import hudson.Launcher;
+import hudson.console.ConsoleLogFilter;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
-import hudson.model.BuildListener;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
-import hudson.tasks.BuildWrapper;
+import hudson.model.Run;
+import hudson.model.TaskListener;
 import hudson.tasks.BuildWrapperDescriptor;
 import hudson.util.Secret;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jenkins.tasks.SimpleBuildWrapper;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
@@ -61,7 +66,7 @@ import org.kohsuke.stapler.StaplerRequest;
  * 
  * @author Romain Seguy (http://openromain.blogspot.com)
  */
-public final class MaskPasswordsBuildWrapper extends BuildWrapper {
+public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
 
     private final List<VarPasswordPair> varPasswordPairs;
 
@@ -70,12 +75,7 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
         this.varPasswordPairs = varPasswordPairs;
     }
 
-    /**
-     * This method is invoked before {@link #makeBuildVariables()} and {@link
-     * #setUp()}.
-     */
-    @Override
-    public OutputStream decorateLogger(AbstractBuild build, OutputStream logger) {
+    @Override public ConsoleLogFilter createLoggerDecorator(Run<?, ?> build) {
         List<String> allPasswords = new ArrayList<String>();  // all passwords to be masked
         MaskPasswordsConfig config = MaskPasswordsConfig.getInstance();
 
@@ -100,7 +100,9 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
         if(params != null) {
             for(ParameterValue param : params) {
                 if(config.isMasked(param.getClass().getName())) {
-                    String password = param.createVariableResolver(build).resolve(param.getName());
+                    EnvVars env = new EnvVars();
+                    param.buildEnvironment(build, env);
+                    String password = env.get(param.getName());
                     if(StringUtils.isNotBlank(password)) {
                         allPasswords.add(password);
                     }
@@ -108,7 +110,24 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
             }
         }
 
-        return new MaskPasswordsOutputStream(logger, allPasswords);
+        return new FilterImpl(allPasswords);
+    }
+
+    private static final class FilterImpl extends ConsoleLogFilter implements Serializable {
+
+        private static final long serialVersionUID = 1;
+
+        private final List<String> allPasswords;
+
+        FilterImpl(List<String> allPasswords) {
+            this.allPasswords = allPasswords;
+        }
+
+        @SuppressWarnings("rawtypes")
+        @Override public OutputStream decorateLogger(AbstractBuild _ignore, OutputStream logger) throws IOException, InterruptedException {
+            return new MaskPasswordsOutputStream(logger, allPasswords);
+        }
+
     }
 
     /**
@@ -136,11 +155,8 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
         }
     }
 
-    @Override
-    public Environment setUp(AbstractBuild build, Launcher launcher, BuildListener listener) throws IOException, InterruptedException {
-        return new Environment() {
-            // nothing to tearDown()
-        };
+    @Override public void setUp(Context context, Run<?, ?> build, FilePath workspace, Launcher launcher, TaskListener listener, EnvVars initialEnvironment) throws IOException, InterruptedException {
+        // nothing to do here
     }
 
     public List<VarPasswordPair> getVarPasswordPairs() {
