@@ -117,15 +117,22 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
 
         private static final long serialVersionUID = 1;
 
-        private final List<String> allPasswords;
+        private final List<Secret> allPasswords;
 
         FilterImpl(List<String> allPasswords) {
-            this.allPasswords = allPasswords;
+            this.allPasswords = new ArrayList<Secret>();
+            for (String password : allPasswords) {
+                this.allPasswords.add(Secret.fromString(password));
+            }
         }
 
         @SuppressWarnings("rawtypes")
         @Override public OutputStream decorateLogger(AbstractBuild _ignore, OutputStream logger) throws IOException, InterruptedException {
-            return new MaskPasswordsOutputStream(logger, allPasswords);
+            List<String> passwords = new ArrayList<String>();
+            for (Secret password : allPasswords) {
+                passwords.add(password.getPlainText());
+            }
+            return new MaskPasswordsOutputStream(logger, passwords);
         }
 
     }

@@ -24,8 +24,15 @@
 
 package com.michelin.cio.hudson.plugins.maskpasswords;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+import org.apache.commons.io.FileUtils;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
@@ -74,13 +81,36 @@ public class MaskPasswordsWorkflowTest {
         });
         story.addStep(new Statement() {
             @Override public void evaluate() throws Throwable {
-                SemaphoreStep.success("restarting/1", null);
                 WorkflowJob p = story.j.jenkins.getItemByFullName("p", WorkflowJob.class);
                 WorkflowRun b = p.getLastBuild();
+                assertEquals("TODO cannot keep it out of the closure block, but at least outside users cannot see this; withCredentials does better", new HashSet<String>(Arrays.asList("build.xml", "program.dat")), grep(b.getRootDir(), "s3cr3t"));
+                SemaphoreStep.success("restarting/1", null);
                 story.j.assertBuildStatusSuccess(story.j.waitForCompletion(b));
                 story.j.assertLogContains("printed ******** oops", b);
+                assertEquals("in build.xml only because it was literally in program text", Collections.singleton("build.xml"), grep(b.getRootDir(), "s3cr3t"));
             }
         });
+    }
+
+    // Copied from credentials-binding-plugin; perhaps belongs in JenkinsRule?
+    private static Set<String> grep(File dir, String text) throws IOException {
+        Set<String> matches = new TreeSet<String>();
+        grep(dir, text, "", matches);
+        return matches;
+    }
+    private static void grep(File dir, String text, String prefix, Set<String> matches) throws IOException {
+        File[] kids = dir.listFiles();
+        if (kids == null) {
+            return;
+        }
+        for (File kid : kids) {
+            String qualifiedName = prefix + kid.getName();
+            if (kid.isDirectory()) {
+                grep(kid, text, qualifiedName + "/", matches);
+            } else if (kid.isFile() && FileUtils.readFileToString(kid).contains(text)) {
+                matches.add(qualifiedName);
+            }
+        }
     }
 
 }
