@@ -44,8 +44,10 @@ import hudson.util.Secret;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.sf.json.JSONArray;
@@ -70,19 +72,14 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
         this.varPasswordPairs = varPasswordPairs;
     }
 
-    /**
-     * This method is invoked before {@link #makeBuildVariables()} and {@link
-     * #setUp()}.
-     */
-    @Override
-    public OutputStream decorateLogger(AbstractBuild build, OutputStream logger) {
-        List<String> allPasswords = new ArrayList<String>();  // all passwords to be masked
+    private Map<String, String> getMaskedPasswords(AbstractBuild build) {
+        Map<String, String> allPasswords = new HashMap<String, String>();  // all passwords to be masked
         MaskPasswordsConfig config = MaskPasswordsConfig.getInstance();
 
         // global passwords
         List<VarPasswordPair> globalVarPasswordPairs = config.getGlobalVarPasswordPairs();
         for(VarPasswordPair globalVarPasswordPair: globalVarPasswordPairs) {
-            allPasswords.add(globalVarPasswordPair.getPassword());
+            allPasswords.put(globalVarPasswordPair.getVar(), globalVarPasswordPair.getPassword());
         }
 
         // job's passwords
@@ -90,7 +87,7 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
             for(VarPasswordPair varPasswordPair: varPasswordPairs) {
                 String password = varPasswordPair.getPassword();
                 if(StringUtils.isNotBlank(password)) {
-                    allPasswords.add(password);
+                    allPasswords.put(varPasswordPair.getVar(), password);
                 }
             }
         }
@@ -102,13 +99,27 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
                 if(config.isMasked(param.getClass().getName())) {
                     String password = param.createVariableResolver(build).resolve(param.getName());
                     if(StringUtils.isNotBlank(password)) {
-                        allPasswords.add(password);
+                        allPasswords.put(param.getName(), password);
                     }
                 }
             }
         }
 
-        return new MaskPasswordsOutputStream(logger, allPasswords);
+        return allPasswords;
+    }
+
+    /**
+     * This method is invoked before {@link #makeBuildVariables()} and {@link
+     * #setUp()}.
+     */
+    @Override
+    public OutputStream decorateLogger(AbstractBuild build, OutputStream logger) {
+        return new MaskPasswordsOutputStream(logger, getMaskedPasswords(build).values());
+    }
+
+    @Override
+    public void makeSensitiveBuildVariables(AbstractBuild build, Set<String> sensitiveVariables) {
+        sensitiveVariables.addAll(getMaskedPasswords(build).keySet());
     }
 
     /**
