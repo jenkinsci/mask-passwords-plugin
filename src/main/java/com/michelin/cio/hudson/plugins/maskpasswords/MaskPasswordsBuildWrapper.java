@@ -39,6 +39,7 @@ import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.tasks.BuildWrapper;
 import hudson.tasks.BuildWrapperDescriptor;
+import hudson.util.CopyOnWriteMap;
 import hudson.util.Secret;
 
 import java.io.IOException;
@@ -46,6 +47,8 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.sf.json.JSONArray;
@@ -70,6 +73,7 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
         this.varPasswordPairs = varPasswordPairs;
     }
 
+    //TODO: Most probably the method is not required after introducing sensitive vars
     /**
      * This method is invoked before {@link #makeBuildVariables()} and {@link
      * #setUp()}.
@@ -136,6 +140,13 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
         }
     }
 
+    @Override
+    public void makeSensitiveBuildVariables(AbstractBuild build, Set<String> sensitiveVariables) {
+        final Map<String, String> variables = new TreeMap<String, String>();
+        makeBuildVariables(build, variables);    
+        sensitiveVariables.addAll(variables.keySet());
+    }
+    
     @Override
     public Environment setUp(AbstractBuild build, Launcher launcher, BuildListener listener) throws IOException, InterruptedException {
         return new Environment() {
