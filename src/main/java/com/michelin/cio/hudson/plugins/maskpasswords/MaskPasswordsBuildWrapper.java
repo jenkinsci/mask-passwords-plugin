@@ -73,6 +73,7 @@ public final class MaskPasswordsBuildWrapper extends BuildWrapper {
         this.varPasswordPairs = varPasswordPairs;
     }
 
+    //TODO: Most probably the method is not required after introducing sensitive vars
     /**
      * This method is invoked before {@link #makeBuildVariables()} and {@link
      * #setUp()}.
