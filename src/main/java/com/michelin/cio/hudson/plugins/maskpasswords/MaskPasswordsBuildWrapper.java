@@ -50,6 +50,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.tasks.SimpleBuildWrapper;
@@ -166,6 +168,13 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         // nothing to do here
     }
 
+    @Override
+    public void makeSensitiveBuildVariables(AbstractBuild build, Set<String> sensitiveVariables) {
+        final Map<String, String> variables = new TreeMap<String, String>();
+        makeBuildVariables(build, variables);    
+        sensitiveVariables.addAll(variables.keySet());
+    }
+    
     public List<VarPasswordPair> getVarPasswordPairs() {
         return varPasswordPairs;
     }
