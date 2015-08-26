@@ -77,7 +77,8 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         this.varPasswordPairs = varPasswordPairs;
     }
 
-    @Override public ConsoleLogFilter createLoggerDecorator(Run<?, ?> build) {
+    @Override
+    public ConsoleLogFilter createLoggerDecorator(Run<?, ?> build) {
         List<String> allPasswords = new ArrayList<String>();  // all passwords to be masked
         MaskPasswordsConfig config = MaskPasswordsConfig.getInstance();
 
@@ -117,7 +118,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
 
     private static final class FilterImpl extends ConsoleLogFilter implements Serializable {
 
-        private static final long serialVersionUID = 1;
+        private static final long serialVersionUID = 1L;
 
         private final List<Secret> allPasswords;
 
@@ -129,7 +130,8 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         }
 
         @SuppressWarnings("rawtypes")
-        @Override public OutputStream decorateLogger(AbstractBuild _ignore, OutputStream logger) throws IOException, InterruptedException {
+        @Override
+        public OutputStream decorateLogger(AbstractBuild _ignore, OutputStream logger) throws IOException, InterruptedException {
             List<String> passwords = new ArrayList<String>();
             for (Secret password : allPasswords) {
                 passwords.add(password.getPlainText());
@@ -164,10 +166,6 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         }
     }
 
-    @Override public void setUp(Context context, Run<?, ?> build, FilePath workspace, Launcher launcher, TaskListener listener, EnvVars initialEnvironment) throws IOException, InterruptedException {
-        // nothing to do here
-    }
-
     @Override
     public void makeSensitiveBuildVariables(AbstractBuild build, Set<String> sensitiveVariables) {
         final Map<String, String> variables = new TreeMap<String, String>();
@@ -175,6 +173,11 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         sensitiveVariables.addAll(variables.keySet());
     }
     
+    @Override
+    public void setUp(Context context, Run<?, ?> build, FilePath workspace, Launcher launcher, TaskListener listener, EnvVars initialEnvironment) throws IOException, InterruptedException {
+        // nothing to do here
+    }
+
     public List<VarPasswordPair> getVarPasswordPairs() {
         return varPasswordPairs;
     }

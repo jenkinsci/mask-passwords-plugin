@@ -51,12 +51,16 @@ import org.jvnet.hudson.test.RestartableJenkinsRule;
 @Issue("JENKINS-27392")
 public class MaskPasswordsWorkflowTest {
 
-    @ClassRule public static BuildWatcher buildWatcher = new BuildWatcher();
-    @Rule public RestartableJenkinsRule story = new RestartableJenkinsRule();
+    @ClassRule
+    public static BuildWatcher buildWatcher = new BuildWatcher();
+    @Rule
+    public RestartableJenkinsRule story = new RestartableJenkinsRule();
 
-    @Test public void configRoundTrip() throws Exception {
+    @Test
+    public void configRoundTrip() throws Exception {
         story.addStep(new Statement() {
-            @Override public void evaluate() throws Throwable {
+            @Override
+            public void evaluate() throws Throwable {
                 MaskPasswordsBuildWrapper bw1 = new MaskPasswordsBuildWrapper(Collections.singletonList(new MaskPasswordsBuildWrapper.VarPasswordPair("PASSWORD", "s3cr3t")));
                 CoreWrapperStep step1 = new CoreWrapperStep(bw1);
                 CoreWrapperStep step2 = new StepConfigTester(story.j).configRoundTrip(step1);
@@ -70,9 +74,11 @@ public class MaskPasswordsWorkflowTest {
         });
     }
 
-    @Test public void basics() throws Exception {
+    @Test
+    public void basics() throws Exception {
         story.addStep(new Statement() {
-            @Override public void evaluate() throws Throwable {
+            @Override
+            public void evaluate() throws Throwable {
                 WorkflowJob p = story.j.jenkins.createProject(WorkflowJob.class, "p");
                 p.setDefinition(new CpsFlowDefinition("node {wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[var: 'PASSWORD', password: 's3cr3t']]]) {semaphore 'restarting'; echo 'printed s3cr3t oops'}}", true));
                 WorkflowRun b = p.scheduleBuild2(0).waitForStart();
@@ -80,7 +86,8 @@ public class MaskPasswordsWorkflowTest {
             }
         });
         story.addStep(new Statement() {
-            @Override public void evaluate() throws Throwable {
+            @Override
+            public void evaluate() throws Throwable {
                 WorkflowJob p = story.j.jenkins.getItemByFullName("p", WorkflowJob.class);
                 WorkflowRun b = p.getLastBuild();
                 assertEquals("TODO cannot keep it out of the closure block, but at least outside users cannot see this; withCredentials does better", new HashSet<String>(Arrays.asList("build.xml", "program.dat")), grep(b.getRootDir(), "s3cr3t"));
