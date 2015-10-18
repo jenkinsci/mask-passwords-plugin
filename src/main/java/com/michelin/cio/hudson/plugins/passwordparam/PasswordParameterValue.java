@@ -25,11 +25,12 @@
  */
 package com.michelin.cio.hudson.plugins.passwordparam;
 
+import hudson.EnvVars;
 import hudson.model.AbstractBuild;
 import hudson.model.ParameterValue;
+import hudson.model.Run;
 import hudson.util.Secret;
 import hudson.util.VariableResolver;
-import java.util.Map;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 public class PasswordParameterValue extends ParameterValue {
@@ -49,7 +50,7 @@ public class PasswordParameterValue extends ParameterValue {
     }
 
     @Override
-    public void buildEnvVars(AbstractBuild<?,?> build, Map<String,String> env) {
+    public void buildEnvironment(Run<?,?> build, EnvVars env) {
         env.put(name.toUpperCase(), value != null ? Secret.toString(value) : null);
     }
 
