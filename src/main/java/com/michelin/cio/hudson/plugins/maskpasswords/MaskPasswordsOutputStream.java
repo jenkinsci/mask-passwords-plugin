@@ -49,13 +49,19 @@ public class MaskPasswordsOutputStream extends LineTransformationOutputStream {
      *               will write to
      * @param passwords A collection of {@link String}s to be masked
      */
-    public MaskPasswordsOutputStream(OutputStream logger, Collection<String> passwords) {
+    public MaskPasswordsOutputStream(OutputStream logger, Collection<String> passwords, Collection<String> regexes) {
         this.logger = logger;
 
+        /**
+         * WIP - untested, but I believe I have all of the regex support done except for this, actually
+         * adding the regexes to the master masking regex. I need to give some thought to the cleanest
+         * way to implement this.
+         */
         if(passwords != null && passwords.size() > 0) {
             // passwords are aggregated into a regex which is compiled as a pattern
             // for efficiency
             StringBuilder regex = new StringBuilder().append('(');
+            // JANTMAN regex.append("plain2text2|");
 
             int nbMaskedPasswords = 0;
             for(String password: passwords) {

@@ -53,4 +53,20 @@
             </f:repeatable>
         </f:entry>
     </f:section>
+    <!-- global regexes -->
+    <f:section title="${%GlobalVarMaskRegexes}">
+        <f:entry field="globalVarMaskRegexes">
+            <f:repeatable name="globalVarMaskRegexes" items="${descriptor.config.globalVarMaskRegexes}" var="globalVarMaskRegex">
+                <table width="100%">
+                    <tr>
+                        <td width="10%" align="right">${%Regex}</td>
+                        <td width="70%">
+                            <f:textbox name="globalVarMaskRegex.regex" value="${!empty globalVarMaskRegex.regex?globalVarMaskRegex.regex:''}"/>
+                        </td>
+                        <td width="20%" align="right"><f:repeatableDeleteButton/></td>
+                    </tr>
+                </table>
+            </f:repeatable>
+        </f:entry>
+    </f:section>
 </j:jelly>

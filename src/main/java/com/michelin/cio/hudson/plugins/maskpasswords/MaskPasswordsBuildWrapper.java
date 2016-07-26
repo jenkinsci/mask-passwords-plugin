@@ -65,21 +65,24 @@ import org.kohsuke.stapler.StaplerRequest;
 
 /**
  * Build wrapper that alters the console so that passwords don't get displayed.
- * 
+ *
  * @author Romain Seguy (http://openromain.blogspot.com)
  */
 public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
 
     private final List<VarPasswordPair> varPasswordPairs;
+    private final List<VarMaskRegex> varMaskRegexes;
 
     @DataBoundConstructor
-    public MaskPasswordsBuildWrapper(List<VarPasswordPair> varPasswordPairs) {
+    public MaskPasswordsBuildWrapper(List<VarPasswordPair> varPasswordPairs, List<VarMaskRegex> varMaskRegexes) {
         this.varPasswordPairs = varPasswordPairs;
+        this.varMaskRegexes = varMaskRegexes;
     }
 
     @Override
     public ConsoleLogFilter createLoggerDecorator(Run<?, ?> build) {
         List<String> allPasswords = new ArrayList<String>();  // all passwords to be masked
+        List<String> allRegexes = new ArrayList<String>(); // all regexes to be masked
         MaskPasswordsConfig config = MaskPasswordsConfig.getInstance();
 
         // global passwords
@@ -88,12 +91,28 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
             allPasswords.add(globalVarPasswordPair.getPassword());
         }
 
+        // global regexes
+        List<VarMaskRegex> globalVarMaskRegexes = config.getGlobalVarMaskRegexes();
+        for(VarMaskRegex globalVarMaskRegex: globalVarMaskRegexes) {
+            allRegexes.add(globalVarMaskRegex.getRegex());
+        }
+
         // job's passwords
         if(varPasswordPairs != null) {
             for(VarPasswordPair varPasswordPair: varPasswordPairs) {
                 String password = varPasswordPair.getPassword();
                 if(StringUtils.isNotBlank(password)) {
                     allPasswords.add(password);
+                }
+            }
+        }
+
+        // job's regexes
+        if(varMaskRegexes != null) {
+            for(VarMaskRegex varMaskRegex: varMaskRegexes) {
+                String regex = varMaskRegex.getRegex();
+                if(StringUtils.isNotBlank(regex)) {
+                    allRegexes.add(regex);
                 }
             }
         }
@@ -113,7 +132,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
             }
         }
 
-        return new FilterImpl(allPasswords);
+        return new FilterImpl(allPasswords, allRegexes);
     }
 
     private static final class FilterImpl extends ConsoleLogFilter implements Serializable {
@@ -121,11 +140,16 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         private static final long serialVersionUID = 1L;
 
         private final List<Secret> allPasswords;
+        private final List<String> allRegexes;
 
-        FilterImpl(List<String> allPasswords) {
+        FilterImpl(List<String> allPasswords, List<String> allRegexes) {
             this.allPasswords = new ArrayList<Secret>();
+            this.allRegexes = new ArrayList<String>();
             for (String password : allPasswords) {
                 this.allPasswords.add(Secret.fromString(password));
+            }
+            for (String regex : allRegexes) {
+                this.allRegexes.add(regex);
             }
         }
 
@@ -133,10 +157,14 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         @Override
         public OutputStream decorateLogger(AbstractBuild _ignore, OutputStream logger) throws IOException, InterruptedException {
             List<String> passwords = new ArrayList<String>();
+            List<String> regexes = new ArrayList<String>();
             for (Secret password : allPasswords) {
                 passwords.add(password.getPlainText());
             }
-            return new MaskPasswordsOutputStream(logger, passwords);
+            for (String regex : allRegexes) {
+                regexes.add(regex);
+            }
+            return new MaskPasswordsOutputStream(logger, passwords, regexes);
         }
 
     }
@@ -169,10 +197,10 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
     @Override
     public void makeSensitiveBuildVariables(AbstractBuild build, Set<String> sensitiveVariables) {
         final Map<String, String> variables = new TreeMap<String, String>();
-        makeBuildVariables(build, variables);    
+        makeBuildVariables(build, variables);
         sensitiveVariables.addAll(variables.keySet());
     }
-    
+
     @Override
     public void setUp(Context context, Run<?, ?> build, FilePath workspace, Launcher launcher, TaskListener listener, EnvVars initialEnvironment) throws IOException, InterruptedException {
         // nothing to do here
@@ -180,6 +208,10 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
 
     public List<VarPasswordPair> getVarPasswordPairs() {
         return varPasswordPairs;
+    }
+
+    public List<VarMaskRegex> getVarMaskRegexes() {
+        return varMaskRegexes;
     }
 
     /**
@@ -239,9 +271,54 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
 
     }
 
+    /**
+     * Represents regexes defined by users in their jobs.
+     */
+    public static class VarMaskRegex implements Cloneable {
+
+        private final String regex;
+
+        @DataBoundConstructor
+        public VarMaskRegex(String regex) {
+            this.regex = regex;
+        }
+
+        @Override
+        public Object clone() {
+            return new VarMaskRegex(getRegex());
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if(obj == null) {
+                return false;
+            }
+            if(getClass() != obj.getClass()) {
+                return false;
+            }
+            final VarMaskRegex other = (VarMaskRegex) obj;
+            if((this.regex == null) ? (other.regex != null) : !this.regex.equals(other.regex)) {
+                return false;
+            }
+            return true;
+        }
+
+        public String getRegex() {
+            return regex;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 3;
+            hash = 67 * hash + (this.regex != null ? this.regex.hashCode() : 0);
+            return hash;
+        }
+
+    }
+
     @Extension(ordinal = 1000) // JENKINS-12161
     public static final class DescriptorImpl extends BuildWrapperDescriptor {
-        
+
         public DescriptorImpl() {
             super(MaskPasswordsBuildWrapper.class);
         }
@@ -286,6 +363,24 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
                     }
                 }
 
+                // global regexes
+                if(submittedForm.has("globalVarMaskRegexes")) {
+                    Object o = submittedForm.get("globalVarMaskRegexes");
+
+                    if(o instanceof JSONArray) {
+                        JSONArray jsonArray = submittedForm.getJSONArray("globalVarMaskRegexes");
+                        for(int i = 0; i < jsonArray.size(); i++) {
+                            getConfig().addGlobalVarMaskRegex(new VarMaskRegex(
+                                    jsonArray.getJSONObject(i).getString("regex")));
+                        }
+                    }
+                    else if(o instanceof JSONObject) {
+                        JSONObject jsonObject = submittedForm.getJSONObject("globalVarMaskRegexes");
+                        getConfig().addGlobalVarMaskRegex(new VarMaskRegex(
+                                jsonObject.getString("regex")));
+                    }
+                }
+
                 MaskPasswordsConfig.save(getConfig());
 
                 return true;
@@ -324,8 +419,11 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
 
         private final static String VAR_PASSWORD_PAIRS_NODE = "varPasswordPairs";
         private final static String VAR_PASSWORD_PAIR_NODE = "varPasswordPair";
+        private final static String VAR_MASK_REGEXES_NODE = "varMaskRegexes";
+        private final static String VAR_MASK_REGEX_NODE = "varMaskRegex";
         private final static String VAR_ATT = "var";
         private final static String PASSWORD_ATT = "password";
+        private final static String REGEX_ATT = "regex";
 
         public boolean canConvert(Class clazz) {
             return clazz.equals(MaskPasswordsBuildWrapper.class);
@@ -349,10 +447,25 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
                 }
                 writer.endNode();
             }
+            // varMaskRegexes
+            if(maskPasswordsBuildWrapper.getVarMaskRegexes() != null) {
+                writer.startNode(VAR_MASK_REGEXES_NODE);
+                for(VarMaskRegex varMaskRegex: maskPasswordsBuildWrapper.getVarMaskRegexes()) {
+                    // blank passwords are skipped
+                    if(StringUtils.isBlank(varMaskRegex.getRegex())) {
+                        continue;
+                    }
+                    writer.startNode(VAR_MASK_REGEX_NODE);
+                    writer.addAttribute(REGEX_ATT, varMaskRegex.getRegex());
+                    writer.endNode();
+                }
+                writer.endNode();
+            }
         }
 
         public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext uc) {
             List<VarPasswordPair> varPasswordPairs = new ArrayList<VarPasswordPair>();
+            List<VarMaskRegex> varMaskRegexes = new ArrayList<VarMaskRegex>();
 
             while(reader.hasMoreChildren()) {
                 reader.moveDown();
@@ -373,13 +486,29 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
                     }
                     reader.moveUp();
                 }
+                else if(reader.getNodeName().equals(VAR_MASK_REGEXES_NODE)) {
+                    while(reader.hasMoreChildren()) {
+                        reader.moveDown();
+                        if(reader.getNodeName().equals(VAR_MASK_REGEX_NODE)) {
+                            varMaskRegexes.add(new VarMaskRegex(
+                                    reader.getAttribute(REGEX_ATT)));
+                        }
+                        else {
+                            LOGGER.log(Level.WARNING,
+                                    "Encountered incorrect node name: Expected \"" + VAR_MASK_REGEX_NODE + "\", got \"{0}\"",
+                                    reader.getNodeName());
+                        }
+                        reader.moveUp();
+                    }
+                    reader.moveUp();
+                }
                 else {
                     LOGGER.log(Level.WARNING,
                             "Encountered incorrect node name: \"{0}\"", reader.getNodeName());
                 }
             }
 
-            return new MaskPasswordsBuildWrapper(varPasswordPairs);
+            return new MaskPasswordsBuildWrapper(varPasswordPairs, varMaskRegexes);
         }
 
     }

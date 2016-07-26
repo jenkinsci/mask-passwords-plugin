@@ -50,4 +50,18 @@
             </table>
         </f:repeatable>
     </f:entry>
+    <!-- regexes -->
+    <f:entry field="varMaskRegexes">
+        <f:repeatable name="varMaskRegexes" items="${instance.varMaskRegexes}" var="varMaskRegex">
+            <table width="100%">
+                <tr>
+                    <td width="10%" align="right">${%Regex}</td>
+                    <td width="70%">
+                        <f:textbox name="varMaskRegex.regex" value="${!empty varMaskRegex.regex?varMaskRegex.regex:''}"/>
+                    </td>
+                    <td width="20%" align="right"><f:repeatableDeleteButton/></td>
+                </tr>
+            </table>
+        </f:repeatable>
+    </f:entry>
 </j:jelly>
