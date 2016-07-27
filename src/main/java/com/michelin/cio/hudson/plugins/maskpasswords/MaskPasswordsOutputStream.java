@@ -52,25 +52,33 @@ public class MaskPasswordsOutputStream extends LineTransformationOutputStream {
     public MaskPasswordsOutputStream(OutputStream logger, Collection<String> passwords, Collection<String> regexes) {
         this.logger = logger;
 
-        /**
-         * WIP - untested, but I believe I have all of the regex support done except for this, actually
-         * adding the regexes to the master masking regex. I need to give some thought to the cleanest
-         * way to implement this.
-         */
-        if(passwords != null && passwords.size() > 0) {
+
+        if((passwords != null && passwords.size() > 0) || (regexes != null && regexes.size() > 0)) {
             // passwords are aggregated into a regex which is compiled as a pattern
             // for efficiency
             StringBuilder regex = new StringBuilder().append('(');
-            // JANTMAN regex.append("plain2text2|");
 
             int nbMaskedPasswords = 0;
-            for(String password: passwords) {
-                if(StringUtils.isNotEmpty(password)) { // we must not handle empty passwords
-                    regex.append(Pattern.quote(password));
-                    regex.append('|');
-                    nbMaskedPasswords++;
-                }
+
+            if(passwords != null && passwords.size() > 0) {
+              for(String password: passwords) {
+                  if(StringUtils.isNotEmpty(password)) { // we must not handle empty passwords
+                      regex.append(Pattern.quote(password));
+                      regex.append('|');
+                      nbMaskedPasswords++;
+                  }
+              }
             }
+            if(regexes != null && regexes.size() > 0) {
+              for(String user_regex: regexes) {
+                  if(StringUtils.isNotEmpty(user_regex)) { // we must not handle empty passwords
+                      regex.append(user_regex);
+                      regex.append('|');
+                      nbMaskedPasswords++;
+                  }
+              }
+            }
+
             if(nbMaskedPasswords++ >= 1) { // is there at least one password to mask?
                 regex.deleteCharAt(regex.length()-1); // removes the last unuseful pipe
                 regex.append(')');
