@@ -108,14 +108,16 @@ public class MaskPasswordsWorkflowTest {
 
     @Test
     public void notEnabledGlobally() throws Exception {
+
         story.addStep(new Statement() {
             @Override
             public void evaluate() throws Throwable {
                 MaskPasswordsConfig config = MaskPasswordsConfig.getInstance();
                 config.setGlobalVarEnabledGlobally(false);
+                config.addGlobalVarMaskRegex(new MaskPasswordsBuildWrapper.VarMaskRegex("s\\dcr[0-9]t"));
                 MaskPasswordsConfig.save(config);
                 WorkflowJob p = story.j.jenkins.createProject(WorkflowJob.class, "p2");
-                p.setDefinition(new CpsFlowDefinition("node {semaphore 'restarting'; echo 'printed s3cr3t oops'}", true));
+                p.setDefinition(new CpsFlowDefinition("node {semaphore 'restarting'; echo pwd(); echo 'printed s3cr3t oops'}", true));
                 WorkflowRun b = p.scheduleBuild2(0).waitForStart();
                 SemaphoreStep.waitForStart("restarting/1", b);
             }
@@ -129,21 +131,23 @@ public class MaskPasswordsWorkflowTest {
                 SemaphoreStep.success("restarting/1", null);
                 story.j.assertBuildStatusSuccess(story.j.waitForCompletion(b));
                 story.j.assertLogContains("printed s3cr3t oops", b);
+                story.j.assertLogNotContains("/tmp", b);
             }
         });
     }
 
     @Test
     public void enabledGlobally() throws Exception {
+
         story.addStep(new Statement() {
             @Override
             public void evaluate() throws Throwable {
                 MaskPasswordsConfig config = MaskPasswordsConfig.getInstance();
-                config.setGlobalVarEnabledGlobally(true);
+                config.setGlobalVarEnabledGlobally(false);
                 config.addGlobalVarMaskRegex(new MaskPasswordsBuildWrapper.VarMaskRegex("s\\dcr[0-9]t"));
                 MaskPasswordsConfig.save(config);
                 WorkflowJob p = story.j.jenkins.createProject(WorkflowJob.class, "p2");
-                p.setDefinition(new CpsFlowDefinition("node {semaphore 'restarting'; echo 'printed s3cr3t oops'}", true));
+                p.setDefinition(new CpsFlowDefinition("node {semaphore 'restarting'; echo pwd(); echo 'printed s3cr3t oops'}", true));
                 WorkflowRun b = p.scheduleBuild2(0).waitForStart();
                 SemaphoreStep.waitForStart("restarting/1", b);
             }
@@ -151,6 +155,8 @@ public class MaskPasswordsWorkflowTest {
         story.addStep(new Statement() {
             @Override
             public void evaluate() throws Throwable {
+                MaskPasswordsConfig c = MaskPasswordsConfig.getInstance();
+                //assertEquals("Global enable configuration has been lost!", true, c.isEnabledGlobally());
                 WorkflowJob p = story.j.jenkins.getItemByFullName("p2", WorkflowJob.class);
                 WorkflowRun b = p.getLastBuild();
                 assertEquals("TODO cannot keep it out of the closure block, but at least outside users cannot see this; withCredentials does better", new HashSet<String>(Arrays.asList("build.xml", "program.dat")), grep(b.getRootDir(), "s3cr3t"));
