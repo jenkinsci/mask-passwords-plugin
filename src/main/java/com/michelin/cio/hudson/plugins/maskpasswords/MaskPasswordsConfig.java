@@ -89,6 +89,12 @@ public class MaskPasswordsConfig {
      * @since 2.9
      */
     private List<VarMaskRegex> globalVarMaskRegexes;
+    /**
+     * Whether or not to enable the plugin globally on ALL BUILDS.
+     *
+     * @since 2.9
+     */
+    private boolean globalVarEnableGlobally;
 
     public MaskPasswordsConfig() {
         maskPasswordsParamDefClasses = new LinkedHashSet<String>();
@@ -96,6 +102,7 @@ public class MaskPasswordsConfig {
         // default values for the first time the config is created
         addMaskedPasswordParameterDefinition(hudson.model.PasswordParameterDefinition.class.getName());
         addMaskedPasswordParameterDefinition(com.michelin.cio.hudson.plugins.passwordparam.PasswordParameterDefinition.class.getName());
+        globalVarEnableGlobally = false;
     }
 
     /**
@@ -139,10 +146,15 @@ public class MaskPasswordsConfig {
         maskPasswordsParamDefClasses.add(className);
     }
 
+    public void setGlobalVarEnabledGlobally(boolean state) {
+      globalVarEnableGlobally = state;
+    }
+
     public void clear() {
         maskPasswordsParamDefClasses.clear();
         getGlobalVarPasswordPairsList().clear();
         getGlobalVarMaskRegexesList().clear();
+        globalVarEnableGlobally = false;
     }
 
     public static MaskPasswordsConfig getInstance() {
@@ -246,6 +258,13 @@ public class MaskPasswordsConfig {
     }
 
     /**
+     * Returns whether the plugin is enabled globally for ALL BUILDS.
+     */
+    public boolean isEnabledGlobally() {
+      return globalVarEnableGlobally;
+    }
+
+    /**
      * Returns true if the specified parameter value class name corresponds to
      * a parameter definition class name selected in Hudson's/Jenkins' main
      * configuration screen.
@@ -320,7 +339,7 @@ public class MaskPasswordsConfig {
         catch(Exception e) {
             LOGGER.log(Level.WARNING, "Unable to load Mask Passwords plugin configuration from " + CONFIG_FILE, e);
         }
-
+        LOGGER.log(Level.FINE, "No Mask Passwords config file loaded; using defaults");
         return new MaskPasswordsConfig();
     }
 

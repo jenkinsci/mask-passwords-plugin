@@ -381,6 +381,14 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
                     }
                 }
 
+                // global enable
+                if(submittedForm.has("globalVarMaskEnabledGlobally")) {
+                  boolean b = submittedForm.getBoolean("globalVarMaskEnabledGlobally");
+                  if(b) {
+                    getConfig().setGlobalVarEnabledGlobally(true);
+                  }
+                }
+
                 MaskPasswordsConfig.save(getConfig());
 
                 return true;
