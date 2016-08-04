@@ -26,7 +26,7 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
     <!-- global enable -->
     <f:section title="${%EnabledGlobally}">
-      <f:entry title="${%Enable Mask Passwords for ALL BUILDS}" description="${%High possibility of breaking things; use this only as a last resort and read help}" field="globalVarMaskEnabledGlobally">
+      <f:entry title="${%Enable Mask Passwords for ALL BUILDS}" description="${%High possibility of breaking things; use this only as a last resort. Read help before enabling!}" field="globalVarMaskEnabledGlobally">
           <f:checkbox checked="${descriptor.config.isEnabledGlobally()}" />
       </f:entry>
     </f:section>

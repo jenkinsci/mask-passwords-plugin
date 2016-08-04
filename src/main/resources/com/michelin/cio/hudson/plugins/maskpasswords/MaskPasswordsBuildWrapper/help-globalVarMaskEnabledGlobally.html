@@ -1,5 +1,7 @@
 <div>
-    If checked, the MaskPasswordsBuildWrapper will be injected into EVERY Build that does not have it already configured on the Job.
-    Builds of anything not derived from hudson.models.Job will fail. Other problems may be encountered. Use this only if you'd rather have
-    <span style="color:red">builds fail in strange ways</span> than possibly disclose a secret in build output!
+    If checked, the a MaskPasswordsConsoleLogFilter will be injected into EVERY Build, regardless of the Project's settings.
+    This is generally bad practice, but if your foremost concern is having secrets hidden, it may be worth trying. Note that
+    this should be tested with your jobs before being relied on; it's possible that custom Job types will not honor this.
+    Workflow jobs in Jenkins versions before 1.632 will not honor this
+    (see <a href="https://issues.jenkins-ci.org/browse/JENKINS-30777">JENKINS-30777</a>).
 </div>
