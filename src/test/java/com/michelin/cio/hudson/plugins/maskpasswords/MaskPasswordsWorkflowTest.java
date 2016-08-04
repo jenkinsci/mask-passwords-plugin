@@ -24,6 +24,13 @@
 
 package com.michelin.cio.hudson.plugins.maskpasswords;
 
+import hudson.model.AbstractBuild;
+import hudson.model.BuildListener;
+import hudson.model.Cause;
+import hudson.model.FreeStyleBuild;
+import hudson.model.FreeStyleProject;
+import hudson.model.Result;
+import hudson.Launcher;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -47,6 +54,7 @@ import org.junit.runners.model.Statement;
 import org.jvnet.hudson.test.BuildWatcher;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.RestartableJenkinsRule;
+import org.jvnet.hudson.test.TestBuilder;
 
 @Issue("JENKINS-27392")
 public class MaskPasswordsWorkflowTest {
@@ -101,11 +109,16 @@ public class MaskPasswordsWorkflowTest {
                 SemaphoreStep.success("restarting/1", null);
                 story.j.assertBuildStatusSuccess(story.j.waitForCompletion(b));
                 story.j.assertLogContains("printed ******** oops", b);
+                story.j.assertLogNotContains("printed s3cr3t oops", b);
                 assertEquals("in build.xml only because it was literally in program text", Collections.singleton("build.xml"), grep(b.getRootDir(), "s3cr3t"));
             }
         });
     }
 
+    // test to ensure that when the ConsoleLogFilter isn't enabled globally,
+    // it doesn't change the output (i.e. it respects the config setting).
+    // Note that per JENKINS-30777, this does not work with Workflow jobs
+    // until Jenkins 1.632, so we use a FreeStyleProject.
     @Test
     public void notEnabledGlobally() throws Exception {
 
@@ -116,26 +129,25 @@ public class MaskPasswordsWorkflowTest {
                 config.setGlobalVarEnabledGlobally(false);
                 config.addGlobalVarMaskRegex(new MaskPasswordsBuildWrapper.VarMaskRegex("s\\dcr[0-9]t"));
                 MaskPasswordsConfig.save(config);
-                WorkflowJob p = story.j.jenkins.createProject(WorkflowJob.class, "p2");
-                p.setDefinition(new CpsFlowDefinition("node {semaphore 'restarting'; echo pwd(); echo 'printed s3cr3t oops'}", true));
-                WorkflowRun b = p.scheduleBuild2(0).waitForStart();
-                SemaphoreStep.waitForStart("restarting/1", b);
-            }
-        });
-        story.addStep(new Statement() {
-            @Override
-            public void evaluate() throws Throwable {
-                WorkflowJob p = story.j.jenkins.getItemByFullName("p2", WorkflowJob.class);
-                WorkflowRun b = p.getLastBuild();
-                assertEquals("TODO cannot keep it out of the closure block, but at least outside users cannot see this; withCredentials does better", new HashSet<String>(Arrays.asList("build.xml", "program.dat")), grep(b.getRootDir(), "s3cr3t"));
-                SemaphoreStep.success("restarting/1", null);
+                FreeStyleProject p = story.j.jenkins.createProject(FreeStyleProject.class, "p2");
+                p.getBuildersList().add( new TestBuilder() {
+                    public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+                        listener.getLogger().println("printed s3cr3t oops");
+                        build.setResult(Result.SUCCESS);
+                        return true;
+                    }
+                });
+                FreeStyleBuild b = p.scheduleBuild2(0, new Cause.UserIdCause()).get();
                 story.j.assertBuildStatusSuccess(story.j.waitForCompletion(b));
                 story.j.assertLogContains("printed s3cr3t oops", b);
-                story.j.assertLogNotContains("/tmp", b);
             }
         });
     }
 
+    // Test to ensure that when the plugin/ConsoleLogFilter **is** enabled globally,
+    // it actually suppresses the log output. Note that per JENKINS-30777,
+    // this does not work with Workflow jobs until Jenkins 1.632, so we use
+    // a FreeStyleProject.
     @Test
     public void enabledGlobally() throws Exception {
 
@@ -143,26 +155,21 @@ public class MaskPasswordsWorkflowTest {
             @Override
             public void evaluate() throws Throwable {
                 MaskPasswordsConfig config = MaskPasswordsConfig.getInstance();
-                config.setGlobalVarEnabledGlobally(false);
+                config.setGlobalVarEnabledGlobally(true);
                 config.addGlobalVarMaskRegex(new MaskPasswordsBuildWrapper.VarMaskRegex("s\\dcr[0-9]t"));
                 MaskPasswordsConfig.save(config);
-                WorkflowJob p = story.j.jenkins.createProject(WorkflowJob.class, "p2");
-                p.setDefinition(new CpsFlowDefinition("node {semaphore 'restarting'; echo pwd(); echo 'printed s3cr3t oops'}", true));
-                WorkflowRun b = p.scheduleBuild2(0).waitForStart();
-                SemaphoreStep.waitForStart("restarting/1", b);
-            }
-        });
-        story.addStep(new Statement() {
-            @Override
-            public void evaluate() throws Throwable {
-                MaskPasswordsConfig c = MaskPasswordsConfig.getInstance();
-                //assertEquals("Global enable configuration has been lost!", true, c.isEnabledGlobally());
-                WorkflowJob p = story.j.jenkins.getItemByFullName("p2", WorkflowJob.class);
-                WorkflowRun b = p.getLastBuild();
-                assertEquals("TODO cannot keep it out of the closure block, but at least outside users cannot see this; withCredentials does better", new HashSet<String>(Arrays.asList("build.xml", "program.dat")), grep(b.getRootDir(), "s3cr3t"));
-                SemaphoreStep.success("restarting/1", null);
+                FreeStyleProject p = story.j.jenkins.createProject(FreeStyleProject.class, "p2");
+                p.getBuildersList().add( new TestBuilder() {
+                    public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+                        listener.getLogger().println("printed s3cr3t oops");
+                        build.setResult(Result.SUCCESS);
+                        return true;
+                    }
+                });
+                FreeStyleBuild b = p.scheduleBuild2(0, new Cause.UserIdCause()).get();
                 story.j.assertBuildStatusSuccess(story.j.waitForCompletion(b));
                 story.j.assertLogContains("printed ******** oops", b);
+                story.j.assertLogNotContains("printed s3cr3t oops", b);
             }
         });
     }
