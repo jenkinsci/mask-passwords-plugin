@@ -54,6 +54,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.annotation.CheckForNull;
 import jenkins.tasks.SimpleBuildWrapper;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -77,6 +78,11 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
     public MaskPasswordsBuildWrapper(List<VarPasswordPair> varPasswordPairs, List<VarMaskRegex> varMaskRegexes) {
         this.varPasswordPairs = varPasswordPairs;
         this.varMaskRegexes = varMaskRegexes;
+    }
+
+    public MaskPasswordsBuildWrapper(List<VarPasswordPair> varPasswordPairs) {
+        this.varPasswordPairs = varPasswordPairs;
+        this.varMaskRegexes = new ArrayList<VarMaskRegex>();
     }
 
     @Override
@@ -289,6 +295,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         }
 
         @Override
+        @CheckForNull
         public boolean equals(Object obj) {
             if(obj == null) {
                 return false;
