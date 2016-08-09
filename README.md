@@ -4,7 +4,7 @@ Copyright &copy; 2010-2011, Manufacture Francaise des Pneumatiques Michelin, Rom
 
 About this plugin
 -----------------
-The Mask Passwords plugin is meant to be used from [Hudson][1] or [Jenkins][2] to mask passwords or regulat expressions which may appear from builds' console. Please take a look at [Jenkins' wiki][3] to get detailed information.
+The Mask Passwords plugin is meant to be used from [Hudson][1] or [Jenkins][2] to mask passwords or regular expressions which may appear from builds' console. Please take a look at [Jenkins' wiki][3] to get detailed information.
 
 Installation
 ------------
