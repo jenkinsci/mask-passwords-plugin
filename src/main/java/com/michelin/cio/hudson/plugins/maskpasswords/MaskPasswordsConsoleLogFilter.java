@@ -1,8 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2010-2012, Manufacture Francaise des Pneumatiques Michelin,
- * Romain Seguy
+ * Copyright (c) 2016 Cox Automotive, Inc./Manheim, Jason Antman.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -67,7 +66,7 @@ import org.kohsuke.stapler.StaplerRequest;
  * GLOBAL Console Log Filter that alters the console so that passwords don't
  * get displayed.
  *
- * @author Jason Antman <jason@jasonantman.com>
+ * @author Jason Antman jason@jasonantman.com
  */
 @Extension
 public class MaskPasswordsConsoleLogFilter extends ConsoleLogFilter {

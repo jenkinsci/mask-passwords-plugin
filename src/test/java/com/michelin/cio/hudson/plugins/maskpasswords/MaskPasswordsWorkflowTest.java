@@ -70,19 +70,34 @@ public class MaskPasswordsWorkflowTest {
             @Override
             public void evaluate() throws Throwable {
                 MaskPasswordsBuildWrapper bw1 = new MaskPasswordsBuildWrapper(
-                  Collections.singletonList(new MaskPasswordsBuildWrapper.VarPasswordPair("PASSWORD", "s3cr3t")),
-                  Collections.singletonList(new MaskPasswordsBuildWrapper.VarMaskRegex("foobar"))
+                  Collections.singletonList(new MaskPasswordsBuildWrapper.VarPasswordPair("PASSWORD", "s3cr3t"))
                 );
                 CoreWrapperStep step1 = new CoreWrapperStep(bw1);
                 CoreWrapperStep step2 = new StepConfigTester(story.j).configRoundTrip(step1);
                 MaskPasswordsBuildWrapper bw2 = (MaskPasswordsBuildWrapper) step2.getDelegate();
                 List<MaskPasswordsBuildWrapper.VarPasswordPair> pairs = bw2.getVarPasswordPairs();
-                List<MaskPasswordsBuildWrapper.VarMaskRegex> regexes = bw2.getVarMaskRegexes();
                 assertEquals(1, pairs.size());
-                assertEquals(1, regexes.size());
                 MaskPasswordsBuildWrapper.VarPasswordPair pair = pairs.get(0);
                 assertEquals("PASSWORD", pair.getVar());
                 assertEquals("s3cr3t", pair.getPassword());
+            }
+        });
+    }
+
+    @Test
+    public void regexConfigRoundTrip() throws Exception {
+        story.addStep(new Statement() {
+            @Override
+            public void evaluate() throws Throwable {
+                MaskPasswordsBuildWrapper bw1 = new MaskPasswordsBuildWrapper(
+                  null,
+                  Collections.singletonList(new MaskPasswordsBuildWrapper.VarMaskRegex("foobar"))
+                );
+                CoreWrapperStep step1 = new CoreWrapperStep(bw1);
+                CoreWrapperStep step2 = new StepConfigTester(story.j).configRoundTrip(step1);
+                MaskPasswordsBuildWrapper bw2 = (MaskPasswordsBuildWrapper) step2.getDelegate();
+                List<MaskPasswordsBuildWrapper.VarMaskRegex> regexes = bw2.getVarMaskRegexes();
+                assertEquals(1, regexes.size());
                 MaskPasswordsBuildWrapper.VarMaskRegex regex = regexes.get(0);
                 assertEquals("foobar", regex.getRegex());
             }

@@ -83,7 +83,7 @@ public class MaskPasswordsConfig {
     /**
      * Users can define regexes at the global level to mask in jobs.
      *
-     * <p>Never ever use this attribute directly: Use {@link #getGlobalVarPasswordPairsList} to avoid
+     * <p>Never ever use this attribute directly: Use {@link #getGlobalVarMaskRegexes} to avoid
      * potential NPEs.</p>
      *
      * @since 2.9
@@ -116,6 +116,7 @@ public class MaskPasswordsConfig {
     public void addGlobalVarPasswordPair(VarPasswordPair varPasswordPair) {
         // blank values are forbidden
         if(StringUtils.isBlank(varPasswordPair.getVar()) || StringUtils.isBlank(varPasswordPair.getPassword())) {
+            LOGGER.fine("addGlobalVarPasswordPair NOT adding pair with null var or password");
             return;
         }
         getGlobalVarPasswordPairsList().add(varPasswordPair);
@@ -132,6 +133,7 @@ public class MaskPasswordsConfig {
     public void addGlobalVarMaskRegex(VarMaskRegex varMaskRegex) {
         // blank values are forbidden
         if(StringUtils.isBlank(varMaskRegex.getRegex())) {
+            LOGGER.fine("addGlobalVarMaskRegex NOT adding null regex");
             return;
         }
         getGlobalVarMaskRegexesList().add(varMaskRegex);

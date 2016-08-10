@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collection;
 import java.util.regex.Pattern;
+import javax.annotation.CheckForNull;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -48,8 +49,9 @@ public class MaskPasswordsOutputStream extends LineTransformationOutputStream {
      * @param logger The output stream to which this {@link MaskPasswordsOutputStream}
      *               will write to
      * @param passwords A collection of {@link String}s to be masked
+     * @param regexes A collection of Regular Expression {@link String}s to be masked
      */
-    public MaskPasswordsOutputStream(OutputStream logger, Collection<String> passwords, Collection<String> regexes) {
+    public MaskPasswordsOutputStream(OutputStream logger, @CheckForNull Collection<String> passwords, @CheckForNull Collection<String> regexes) {
         this.logger = logger;
 
 
@@ -91,6 +93,15 @@ public class MaskPasswordsOutputStream extends LineTransformationOutputStream {
         else { // no passwords to hide
             passwordsAsPattern = null;
         }
+    }
+
+    /**
+     * @param logger The output stream to which this {@link MaskPasswordsOutputStream}
+     *               will write to
+     * @param passwords A collection of {@link String}s to be masked
+     */
+    public MaskPasswordsOutputStream(OutputStream logger, @CheckForNull Collection<String> passwords) {
+        this(logger, passwords, null);
     }
 
     @Override

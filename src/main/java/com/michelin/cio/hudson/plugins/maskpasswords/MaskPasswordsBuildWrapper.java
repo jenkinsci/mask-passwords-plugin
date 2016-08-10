@@ -295,7 +295,6 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         }
 
         @Override
-        @CheckForNull
         public boolean equals(Object obj) {
             if(obj == null) {
                 return false;
@@ -310,6 +309,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
             return true;
         }
 
+        @CheckForNull
         public String getRegex() {
             return regex;
         }
