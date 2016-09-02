@@ -72,10 +72,10 @@ public class MaskPasswordsConfig {
     /**
      * Users can define name/password pairs at the global level to share common
      * passwords with several jobs.
-     * 
+     *
      * <p>Never ever use this attribute directly: Use {@link #getGlobalVarPasswordPairsList} to avoid
      * potential NPEs.</p>
-     * 
+     *
      * @since 2.7
      */
     private List<VarPasswordPair> globalVarPasswordPairs;
@@ -90,10 +90,10 @@ public class MaskPasswordsConfig {
 
     /**
      * Adds a name/password pair at the global level.
-     * 
+     *
      * <p>If either name or password is blank (as defined per the Commons Lang
      * library), then the pair is not added.</p>
-     * 
+     *
      * @since 2.7
      */
     public void addGlobalVarPasswordPair(VarPasswordPair varPasswordPair) {
@@ -131,21 +131,21 @@ public class MaskPasswordsConfig {
 
     /**
      * Returns the list of name/password pairs defined at the global level.
-     * 
+     *
      * <p>Modifications broughts to the returned list has no impact on this
      * configuration (the returned value is a copy). Also, the list can be
      * empty but never {@code null}.</p>
-     * 
+     *
      * @since 2.7
      */
     public List<VarPasswordPair> getGlobalVarPasswordPairs() {
         List<VarPasswordPair> r = new ArrayList<VarPasswordPair>(getGlobalVarPasswordPairsList().size());
-        
+
         // deep copy
         for(VarPasswordPair varPasswordPair: getGlobalVarPasswordPairsList()) {
             r.add((VarPasswordPair) varPasswordPair.clone());
         }
-        
+
         return r;
     }
 
@@ -153,7 +153,7 @@ public class MaskPasswordsConfig {
      * Fixes JENKINS-11514: When {@code MaskPasswordsConfig.xml} is there but was created from
      * version 2.6.1 (or older) of the plugin, {@link #globalVarPasswordPairs} can actually be
      * {@code null} ==> Always use this getter to avoid NPEs.
-     * 
+     *
      * @since 2.7.1
      */
     private List<VarPasswordPair> getGlobalVarPasswordPairsList() {
@@ -226,8 +226,9 @@ public class MaskPasswordsConfig {
                         }
                     }};
 
-                    for(Method m: methods) {
-                        maskPasswordsParamValueClasses.add(m.getReturnType().getName());
+                    //If this parameter actions respinds to any of these. Lets add it.
+                    if(!methods.isEmpty()) {
+                        maskPasswordsParamValueClasses.add(paramValueClassName);
                     }
                 }
             }
