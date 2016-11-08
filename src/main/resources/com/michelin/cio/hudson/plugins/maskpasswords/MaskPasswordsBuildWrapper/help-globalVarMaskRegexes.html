@@ -23,9 +23,15 @@
   -->
 
 <div>
-    <p>Define a list of <b>Name</b>/<b>Password</b> pairs to be used from jobs
-    as build variables. If the <b>Mask passwords</b> option is enabled on these
+    <p>Define a list of regular expression patterns
+    to be masked in build output. If the <b>Mask passwords</b> option is enabled on these
     jobs or the <b>Mask Passwords - Enable Globally</b> global option is enabled,
-    then the defined passwords will be automatically masked from the console.</p>
-    <p>Blank values are not accepted (for both name and password).</p>
+    then the defined regexes will be automatically masked from the console.</p>
+    <p>Blank values are not accepted. Patterns will be compiled via
+    <a href="https://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html">java.util.regex.Pattern</a>.
+    Regexes and patterns for defined passwords will be combined with pipes ("|")
+    within one large parenthesized pattern to mask from output (i.e. the final pattern to mask
+    for two passwords ("Password1" and "Password2") and two regexes ("Regex1" and "Regex2")
+    will be: "(Password1|Password2|Regex1|Regex2)").
+    </p>
 </div>

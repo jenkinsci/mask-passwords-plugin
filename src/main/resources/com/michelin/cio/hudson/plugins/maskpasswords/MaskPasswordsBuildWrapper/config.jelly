@@ -33,6 +33,11 @@
         </td>
         <td/>
     </tr>
+    <tr>
+        <td/>
+        <td colspan="2">${%PasswordPairTitle}</td>
+        <td/>
+    </tr>
     <f:entry field="varPasswordPairs">
         <f:repeatable name="varPasswordPairs" items="${instance.varPasswordPairs}" var="varPasswordPair">
             <table width="100%">
@@ -44,6 +49,25 @@
                     <td width="10%" align="right">${%Password}</td>
                     <td width="30%">
                         <f:password name="varPasswordPair.password" value="${varPasswordPair.passwordAsSecret}"/>
+                    </td>
+                    <td width="20%" align="right"><f:repeatableDeleteButton/></td>
+                </tr>
+            </table>
+        </f:repeatable>
+    </f:entry>
+    <!-- regexes -->
+    <tr>
+        <td/>
+        <td colspan="2">${%RegexTitle}</td>
+        <td/>
+    </tr>
+    <f:entry field="varMaskRegexes">
+        <f:repeatable name="varMaskRegexes" items="${instance.varMaskRegexes}" var="varMaskRegex">
+            <table width="100%">
+                <tr>
+                    <td width="10%" align="right">${%Regex}</td>
+                    <td width="70%">
+                        <f:textbox name="varMaskRegex.regex" value="${!empty varMaskRegex.regex?varMaskRegex.regex:''}"/>
                     </td>
                     <td width="20%" align="right"><f:repeatableDeleteButton/></td>
                 </tr>

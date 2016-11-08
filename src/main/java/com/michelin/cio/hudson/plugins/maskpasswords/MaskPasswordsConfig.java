@@ -25,6 +25,7 @@
 package com.michelin.cio.hudson.plugins.maskpasswords;
 
 import com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper.VarPasswordPair;
+import com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper.VarMaskRegex;
 import hudson.ExtensionList;
 import hudson.XmlFile;
 import hudson.model.Hudson;
@@ -72,13 +73,28 @@ public class MaskPasswordsConfig {
     /**
      * Users can define name/password pairs at the global level to share common
      * passwords with several jobs.
-     * 
+     *
      * <p>Never ever use this attribute directly: Use {@link #getGlobalVarPasswordPairsList} to avoid
      * potential NPEs.</p>
-     * 
+     *
      * @since 2.7
      */
     private List<VarPasswordPair> globalVarPasswordPairs;
+    /**
+     * Users can define regexes at the global level to mask in jobs.
+     *
+     * <p>Never ever use this attribute directly: Use {@link #getGlobalVarMaskRegexes} to avoid
+     * potential NPEs.</p>
+     *
+     * @since 2.9
+     */
+    private List<VarMaskRegex> globalVarMaskRegexes;
+    /**
+     * Whether or not to enable the plugin globally on ALL BUILDS.
+     *
+     * @since 2.9
+     */
+    private boolean globalVarEnableGlobally;
 
     public MaskPasswordsConfig() {
         maskPasswordsParamDefClasses = new LinkedHashSet<String>();
@@ -86,22 +102,41 @@ public class MaskPasswordsConfig {
         // default values for the first time the config is created
         addMaskedPasswordParameterDefinition(hudson.model.PasswordParameterDefinition.class.getName());
         addMaskedPasswordParameterDefinition(com.michelin.cio.hudson.plugins.passwordparam.PasswordParameterDefinition.class.getName());
+        globalVarEnableGlobally = false;
     }
 
     /**
      * Adds a name/password pair at the global level.
-     * 
+     *
      * <p>If either name or password is blank (as defined per the Commons Lang
      * library), then the pair is not added.</p>
-     * 
+     *
      * @since 2.7
      */
     public void addGlobalVarPasswordPair(VarPasswordPair varPasswordPair) {
         // blank values are forbidden
         if(StringUtils.isBlank(varPasswordPair.getVar()) || StringUtils.isBlank(varPasswordPair.getPassword())) {
+            LOGGER.fine("addGlobalVarPasswordPair NOT adding pair with null var or password");
             return;
         }
         getGlobalVarPasswordPairsList().add(varPasswordPair);
+    }
+
+    /**
+     * Adds a regex at the global level.
+     *
+     * <p>If regex is blank (as defined per the Commons Lang
+     * library), then the pair is not added.</p>
+     *
+     * @since 2.9
+     */
+    public void addGlobalVarMaskRegex(VarMaskRegex varMaskRegex) {
+        // blank values are forbidden
+        if(StringUtils.isBlank(varMaskRegex.getRegex())) {
+            LOGGER.fine("addGlobalVarMaskRegex NOT adding null regex");
+            return;
+        }
+        getGlobalVarMaskRegexesList().add(varMaskRegex);
     }
 
     /**
@@ -113,9 +148,15 @@ public class MaskPasswordsConfig {
         maskPasswordsParamDefClasses.add(className);
     }
 
+    public void setGlobalVarEnabledGlobally(boolean state) {
+      globalVarEnableGlobally = state;
+    }
+
     public void clear() {
         maskPasswordsParamDefClasses.clear();
         getGlobalVarPasswordPairsList().clear();
+        getGlobalVarMaskRegexesList().clear();
+        globalVarEnableGlobally = false;
     }
 
     public static MaskPasswordsConfig getInstance() {
@@ -131,21 +172,41 @@ public class MaskPasswordsConfig {
 
     /**
      * Returns the list of name/password pairs defined at the global level.
-     * 
+     *
      * <p>Modifications broughts to the returned list has no impact on this
      * configuration (the returned value is a copy). Also, the list can be
      * empty but never {@code null}.</p>
-     * 
+     *
      * @since 2.7
      */
     public List<VarPasswordPair> getGlobalVarPasswordPairs() {
         List<VarPasswordPair> r = new ArrayList<VarPasswordPair>(getGlobalVarPasswordPairsList().size());
-        
+
         // deep copy
         for(VarPasswordPair varPasswordPair: getGlobalVarPasswordPairsList()) {
             r.add((VarPasswordPair) varPasswordPair.clone());
         }
-        
+
+        return r;
+    }
+
+    /**
+     * Returns the list of regexes defined at the global level.
+     *
+     * <p>Modifications broughts to the returned list has no impact on this
+     * configuration (the returned value is a copy). Also, the list can be
+     * empty but never {@code null}.</p>
+     *
+     * @since 2.9
+     */
+    public List<VarMaskRegex> getGlobalVarMaskRegexes() {
+        List<VarMaskRegex> r = new ArrayList<VarMaskRegex>(getGlobalVarMaskRegexesList().size());
+
+        // deep copy
+        for(VarMaskRegex varMaskRegex: getGlobalVarMaskRegexesList()) {
+            r.add((VarMaskRegex) varMaskRegex.clone());
+        }
+
         return r;
     }
 
@@ -153,7 +214,7 @@ public class MaskPasswordsConfig {
      * Fixes JENKINS-11514: When {@code MaskPasswordsConfig.xml} is there but was created from
      * version 2.6.1 (or older) of the plugin, {@link #globalVarPasswordPairs} can actually be
      * {@code null} ==> Always use this getter to avoid NPEs.
-     * 
+     *
      * @since 2.7.1
      */
     private List<VarPasswordPair> getGlobalVarPasswordPairsList() {
@@ -161,6 +222,20 @@ public class MaskPasswordsConfig {
             globalVarPasswordPairs = new ArrayList<VarPasswordPair>();
         }
         return globalVarPasswordPairs;
+    }
+
+    /**
+     * Fixes JENKINS-11514: When {@code MaskPasswordsConfig.xml} is there but was created from
+     * version 2.8 (or older) of the plugin, {@link #globalVarPasswordPairs} can actually be
+     * {@code null} ==> Always use this getter to avoid NPEs.
+     *
+     * @since 2.9
+     */
+    private List<VarMaskRegex> getGlobalVarMaskRegexesList() {
+        if(globalVarMaskRegexes == null) {
+            globalVarMaskRegexes = new ArrayList<VarMaskRegex>();
+        }
+        return globalVarMaskRegexes;
     }
 
     /**
@@ -182,6 +257,13 @@ public class MaskPasswordsConfig {
         }
 
         return params;
+    }
+
+    /**
+     * Returns whether the plugin is enabled globally for ALL BUILDS.
+     */
+    public boolean isEnabledGlobally() {
+      return globalVarEnableGlobally;
     }
 
     /**
@@ -259,7 +341,7 @@ public class MaskPasswordsConfig {
         catch(Exception e) {
             LOGGER.log(Level.WARNING, "Unable to load Mask Passwords plugin configuration from " + CONFIG_FILE, e);
         }
-
+        LOGGER.log(Level.FINE, "No Mask Passwords config file loaded; using defaults");
         return new MaskPasswordsConfig();
     }
 
