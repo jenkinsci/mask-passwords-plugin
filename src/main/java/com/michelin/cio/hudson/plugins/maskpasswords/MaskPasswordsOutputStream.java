@@ -113,4 +113,23 @@ public class MaskPasswordsOutputStream extends LineTransformationOutputStream {
         logger.write(line.getBytes());
     }
 
+    /**
+     * {@inheritDoc}
+     * @throws IOException
+     */
+    @Override
+    public void close() throws IOException {
+        super.close();
+        logger.close();
+    }
+
+    /**
+     * {@inheritDoc}
+     * @throws IOException
+     */
+    @Override
+    public void flush() throws IOException {
+        super.flush();
+        logger.flush();
+    }
 }
