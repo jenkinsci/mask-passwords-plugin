@@ -189,7 +189,7 @@ public class MaskPasswordsConfig {
      * a parameter definition class name selected in Hudson's/Jenkins' main
      * configuration screen.
      */
-    public boolean isMasked(String paramValueClassName) {
+    public synchronized boolean isMasked(String paramValueClassName) {
         try {
             // do we need to build the set of parameter values which must be
             // masked?
