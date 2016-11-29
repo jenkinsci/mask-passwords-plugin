@@ -26,12 +26,15 @@
 package com.michelin.cio.hudson.plugins.maskpasswords;
 
 import hudson.console.LineTransformationOutputStream;
+import org.apache.commons.lang.StringUtils;
+
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Collection;
 import java.util.regex.Pattern;
 import javax.annotation.CheckForNull;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * Custom output stream which masks a predefined set of passwords.
@@ -67,6 +70,16 @@ public class MaskPasswordsOutputStream extends LineTransformationOutputStream {
                   if(StringUtils.isNotEmpty(password)) { // we must not handle empty passwords
                       regex.append(Pattern.quote(password));
                       regex.append('|');
+                    try {
+                        String encodedPassword = URLEncoder.encode(password, "UTF-8");
+                        if (!encodedPassword.equals(password)) {
+                            // add to masking regex
+                            regex.append(Pattern.quote(encodedPassword));
+                            regex.append('|');
+                        }
+                    } catch (UnsupportedEncodingException e) {
+                        // ignore any encoding problem => status quo
+                    }
                       nbMaskedPasswords++;
                   }
               }
