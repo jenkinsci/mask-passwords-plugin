@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.regex.Pattern;
 import javax.annotation.CheckForNull;
 
+//TODO: UTF-8 hardcoding is not a perfect solution
 /**
  * Custom output stream which masks a predefined set of passwords.
  *
@@ -119,11 +120,11 @@ public class MaskPasswordsOutputStream extends LineTransformationOutputStream {
 
     @Override
     protected void eol(byte[] bytes, int len) throws IOException {
-        String line = new String(bytes, 0, len);
+        String line = new String(bytes, 0, len, "UTF-8");
         if(passwordsAsPattern != null) {
             line = passwordsAsPattern.matcher(line).replaceAll(MASKED_PASSWORD);
         }
-        logger.write(line.getBytes());
+        logger.write(line.getBytes("UTF-8"));
     }
 
     /**
