@@ -25,16 +25,16 @@
 
 <div>
     <p>When enabled, allows masking passwords that may appear in the console.</p>
-    <p>Passwords to be masked can be defined at three levels.</p>
+    <p>Passwords or regexes to be masked can be defined at three levels.</p>
     <p>First, it is possible to select in Hudson's/Jenkins' configuration screen
     the build parameters whose value must be masked. For example, selecting the
     <b>Password Parameter</b> type is a good idea.</p>
     <p>Second, still in Hudson's/Jenkins' configuration screen, it is possible
     to define passwords to be masked as global <b>Name</b>/<b>Password</b>
-    pairs.</p>
+    pairs, or regexes to be masked.</p>
     <p>Third, on a per job basis (that is, in the current configuration screen),
     passwords to be masked can be defined as local <b>Name</b>/<b>Password</b>
-    pairs:<ul>
+    pairs, or regexes can be masked:<ul>
     <li><b>Password</b> is aimed at containing a password to be masked from the
     console. Empty and blank values are not allowed (e.g. &quot;&nbsp;&quot;,
     etc.). This field is ciphered. This field can not contain variables, they
@@ -43,5 +43,9 @@
     This allows accessing the password by using the variable rather than hard-coding
     it in a field which is not ciphered (e.g. the ones of the <b>Invoke Ant</b> or
     <b>Execute shell</b> build steps).</li>
+    <li>If <b>Regex</b> is set, then any text matching that regex will be masked
+    in the console output. The regex should not contain start- or end-of-string
+    markers and will be internally and-ed (piped) together with all other regexes
+    and regexes matching the specified names and passwords.</li>
     </ul>
 </div>

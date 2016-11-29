@@ -24,6 +24,13 @@
 
 package com.michelin.cio.hudson.plugins.maskpasswords;
 
+import hudson.model.AbstractBuild;
+import hudson.model.BuildListener;
+import hudson.model.Cause;
+import hudson.model.FreeStyleBuild;
+import hudson.model.FreeStyleProject;
+import hudson.model.Result;
+import hudson.Launcher;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -47,6 +54,7 @@ import org.junit.runners.model.Statement;
 import org.jvnet.hudson.test.BuildWatcher;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.RestartableJenkinsRule;
+import org.jvnet.hudson.test.TestBuilder;
 
 @Issue("JENKINS-27392")
 public class MaskPasswordsWorkflowTest {
@@ -61,7 +69,9 @@ public class MaskPasswordsWorkflowTest {
         story.addStep(new Statement() {
             @Override
             public void evaluate() throws Throwable {
-                MaskPasswordsBuildWrapper bw1 = new MaskPasswordsBuildWrapper(Collections.singletonList(new MaskPasswordsBuildWrapper.VarPasswordPair("PASSWORD", "s3cr3t")));
+                MaskPasswordsBuildWrapper bw1 = new MaskPasswordsBuildWrapper(
+                  Collections.singletonList(new MaskPasswordsBuildWrapper.VarPasswordPair("PASSWORD", "s3cr3t"))
+                );
                 CoreWrapperStep step1 = new CoreWrapperStep(bw1);
                 CoreWrapperStep step2 = new StepConfigTester(story.j).configRoundTrip(step1);
                 MaskPasswordsBuildWrapper bw2 = (MaskPasswordsBuildWrapper) step2.getDelegate();
@@ -70,6 +80,26 @@ public class MaskPasswordsWorkflowTest {
                 MaskPasswordsBuildWrapper.VarPasswordPair pair = pairs.get(0);
                 assertEquals("PASSWORD", pair.getVar());
                 assertEquals("s3cr3t", pair.getPassword());
+            }
+        });
+    }
+
+    @Test
+    public void regexConfigRoundTrip() throws Exception {
+        story.addStep(new Statement() {
+            @Override
+            public void evaluate() throws Throwable {
+                MaskPasswordsBuildWrapper bw1 = new MaskPasswordsBuildWrapper(
+                  null,
+                  Collections.singletonList(new MaskPasswordsBuildWrapper.VarMaskRegex("foobar"))
+                );
+                CoreWrapperStep step1 = new CoreWrapperStep(bw1);
+                CoreWrapperStep step2 = new StepConfigTester(story.j).configRoundTrip(step1);
+                MaskPasswordsBuildWrapper bw2 = (MaskPasswordsBuildWrapper) step2.getDelegate();
+                List<MaskPasswordsBuildWrapper.VarMaskRegex> regexes = bw2.getVarMaskRegexes();
+                assertEquals(1, regexes.size());
+                MaskPasswordsBuildWrapper.VarMaskRegex regex = regexes.get(0);
+                assertEquals("foobar", regex.getRegex());
             }
         });
     }
@@ -94,7 +124,67 @@ public class MaskPasswordsWorkflowTest {
                 SemaphoreStep.success("restarting/1", null);
                 story.j.assertBuildStatusSuccess(story.j.waitForCompletion(b));
                 story.j.assertLogContains("printed ******** oops", b);
+                story.j.assertLogNotContains("printed s3cr3t oops", b);
                 assertEquals("in build.xml only because it was literally in program text", Collections.singleton("build.xml"), grep(b.getRootDir(), "s3cr3t"));
+            }
+        });
+    }
+
+    // test to ensure that when the ConsoleLogFilter isn't enabled globally,
+    // it doesn't change the output (i.e. it respects the config setting).
+    // Note that per JENKINS-30777, this does not work with Workflow jobs
+    // until Jenkins 1.632, so we use a FreeStyleProject.
+    @Test
+    public void notEnabledGlobally() throws Exception {
+
+        story.addStep(new Statement() {
+            @Override
+            public void evaluate() throws Throwable {
+                MaskPasswordsConfig config = MaskPasswordsConfig.getInstance();
+                config.setGlobalVarEnabledGlobally(false);
+                config.addGlobalVarMaskRegex(new MaskPasswordsBuildWrapper.VarMaskRegex("s\\dcr[0-9]t"));
+                MaskPasswordsConfig.save(config);
+                FreeStyleProject p = story.j.jenkins.createProject(FreeStyleProject.class, "p2");
+                p.getBuildersList().add( new TestBuilder() {
+                    public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+                        listener.getLogger().println("printed s3cr3t oops");
+                        build.setResult(Result.SUCCESS);
+                        return true;
+                    }
+                });
+                FreeStyleBuild b = p.scheduleBuild2(0, new Cause.UserIdCause()).get();
+                story.j.assertBuildStatusSuccess(story.j.waitForCompletion(b));
+                story.j.assertLogContains("printed s3cr3t oops", b);
+            }
+        });
+    }
+
+    // Test to ensure that when the plugin/ConsoleLogFilter **is** enabled globally,
+    // it actually suppresses the log output. Note that per JENKINS-30777,
+    // this does not work with Workflow jobs until Jenkins 1.632, so we use
+    // a FreeStyleProject.
+    @Test
+    public void enabledGlobally() throws Exception {
+
+        story.addStep(new Statement() {
+            @Override
+            public void evaluate() throws Throwable {
+                MaskPasswordsConfig config = MaskPasswordsConfig.getInstance();
+                config.setGlobalVarEnabledGlobally(true);
+                config.addGlobalVarMaskRegex(new MaskPasswordsBuildWrapper.VarMaskRegex("s\\dcr[0-9]t"));
+                MaskPasswordsConfig.save(config);
+                FreeStyleProject p = story.j.jenkins.createProject(FreeStyleProject.class, "p2");
+                p.getBuildersList().add( new TestBuilder() {
+                    public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+                        listener.getLogger().println("printed s3cr3t oops");
+                        build.setResult(Result.SUCCESS);
+                        return true;
+                    }
+                });
+                FreeStyleBuild b = p.scheduleBuild2(0, new Cause.UserIdCause()).get();
+                story.j.assertBuildStatusSuccess(story.j.waitForCompletion(b));
+                story.j.assertLogContains("printed ******** oops", b);
+                story.j.assertLogNotContains("printed s3cr3t oops", b);
             }
         });
     }
