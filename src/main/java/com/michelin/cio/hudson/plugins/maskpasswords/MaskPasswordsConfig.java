@@ -197,7 +197,7 @@ public class MaskPasswordsConfig {
                 maskPasswordsParamValueClasses = new LinkedHashSet<String>();
 
                 // The only way to find parameter definition/parameter value
-                // couples is to reflect the 3 methods of parameter definition
+                // couples is to reflect the methods of parameter definition
                 // classes which instantiate the parameter value.
                 // This means that this algorithm expects that the developers do
                 // clearly redefine the return type when implementing parameter
@@ -218,11 +218,17 @@ public class MaskPasswordsConfig {
                         } catch(Exception e) {
                             LOGGER.log(Level.INFO, "No createValue(String) method for " + paramDefClass);
                         }
-                        // ParameterDefinition.createValue(org.kohsuke.stapler.StaplerRequest, net.sf.json.JSONObjec)
+                        // ParameterDefinition.createValue(org.kohsuke.stapler.StaplerRequest, net.sf.json.JSONObject)
                         try {
                             add(paramDefClass.getMethod("createValue", StaplerRequest.class, JSONObject.class));
                         }  catch (Exception e) {
                             LOGGER.log(Level.INFO, "No createValue(StaplerRequest, JSONObject) method for " + paramDefClass);
+                        }
+                        // ParameterDefinition.createValue(org.kohsuke.stapler.StaplerRequest)
+                        try {
+                            add(paramDefClass.getMethod("createValue", StaplerRequest.class));
+                        }  catch (Exception e) {
+                            LOGGER.log(Level.INFO, "No createValue(StaplerRequest) method for " + paramDefClass);
                         }
                     }};
 
