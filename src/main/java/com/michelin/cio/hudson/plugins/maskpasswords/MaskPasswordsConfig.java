@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.StaplerRequest;
@@ -167,7 +168,7 @@ public class MaskPasswordsConfig {
     }
 
     private static XmlFile getConfigFile() {
-        return new XmlFile(new File(Hudson.getInstance().getRootDir(), CONFIG_FILE));
+        return new XmlFile(new File(Jenkins.getActiveInstance().getRootDir(), CONFIG_FILE));
     }
 
     /**
@@ -249,7 +250,7 @@ public class MaskPasswordsConfig {
         Map<String, String> params = new HashMap<String, String>();
 
         ExtensionList<ParameterDefinition.ParameterDescriptor> paramExtensions =
-                Hudson.getInstance().getExtensionList(ParameterDefinition.ParameterDescriptor.class);
+                Jenkins.getActiveInstance().getExtensionList(ParameterDefinition.ParameterDescriptor.class);
         for(ParameterDefinition.ParameterDescriptor paramExtension: paramExtensions) {
             // we need the getEnclosingClass() to drop the inner ParameterDescriptor
             // and work directly with the ParameterDefinition
@@ -268,7 +269,7 @@ public class MaskPasswordsConfig {
 
     /**
      * Returns true if the specified parameter value class name corresponds to
-     * a parameter definition class name selected in Hudson's/Jenkins' main
+     * a parameter definition class name selected in Jenkins' main
      * configuration screen.
      */
     public boolean isMasked(String paramValueClassName) {
@@ -285,7 +286,7 @@ public class MaskPasswordsConfig {
                 // clearly redefine the return type when implementing parameter
                 // definitions/values.
                 for(String paramDefClassName: maskPasswordsParamDefClasses) {
-                    final Class paramDefClass = Hudson.getInstance().getPluginManager().uberClassLoader.loadClass(paramDefClassName);
+                    final Class paramDefClass = Jenkins.getActiveInstance().getPluginManager().uberClassLoader.loadClass(paramDefClassName);
 
                     List<Method> methods = new ArrayList<Method>() {{
                         // ParameterDefinition.getDefaultParameterValue()
