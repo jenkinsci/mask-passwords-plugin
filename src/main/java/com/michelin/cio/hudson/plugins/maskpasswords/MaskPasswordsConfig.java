@@ -272,7 +272,7 @@ public class MaskPasswordsConfig {
      * a parameter definition class name selected in Jenkins' main
      * configuration screen.
      */
-    public boolean isMasked(String paramValueClassName) {
+    public synchronized boolean isMasked(String paramValueClassName) {
         try {
             // do we need to build the set of parameter values which must be
             // masked?
