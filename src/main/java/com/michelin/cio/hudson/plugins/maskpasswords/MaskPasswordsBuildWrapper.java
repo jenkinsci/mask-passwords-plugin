@@ -65,7 +65,7 @@ import org.kohsuke.stapler.StaplerRequest;
 
 /**
  * Build wrapper that alters the console so that passwords don't get displayed.
- *
+ * 
  * @author Romain Seguy (http://openromain.blogspot.com)
  */
 public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
@@ -169,10 +169,10 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
     @Override
     public void makeSensitiveBuildVariables(AbstractBuild build, Set<String> sensitiveVariables) {
         final Map<String, String> variables = new TreeMap<String, String>();
-        makeBuildVariables(build, variables);
+        makeBuildVariables(build, variables);    
         sensitiveVariables.addAll(variables.keySet());
     }
-
+    
     @Override
     public void setUp(Context context, Run<?, ?> build, FilePath workspace, Launcher launcher, TaskListener listener, EnvVars initialEnvironment) throws IOException, InterruptedException {
         // nothing to do here
@@ -241,7 +241,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
 
     @Extension(ordinal = 1000) // JENKINS-12161
     public static final class DescriptorImpl extends BuildWrapperDescriptor {
-
+        
         public DescriptorImpl() {
             super(MaskPasswordsBuildWrapper.class);
         }
