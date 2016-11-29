@@ -314,7 +314,9 @@ public class MaskPasswordsConfig {
                         }
                     }};
 
-                    //If this parameter actions respinds to any of these. Lets add it.
+                    // If the class defines any method, we consider it as a ParameterDefinition.
+                    // This parameter definition may produce any ParameterValue, and effectively we cannot guarantee the 
+                    // value is a type or a subtype of the requested parameter.
                     if(!methods.isEmpty()) {
                         maskPasswordsParamValueClasses.add(paramValueClassName);
                     }
