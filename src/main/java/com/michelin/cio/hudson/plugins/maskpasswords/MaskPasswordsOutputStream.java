@@ -25,6 +25,7 @@
 
 package com.michelin.cio.hudson.plugins.maskpasswords;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.console.LineTransformationOutputStream;
 import org.apache.commons.lang.StringUtils;
 
@@ -36,6 +37,7 @@ import java.util.Collection;
 import java.util.regex.Pattern;
 import javax.annotation.CheckForNull;
 
+//TODO: UTF-8 hardcoding is not a perfect solution
 /**
  * Custom output stream which masks a predefined set of passwords.
  *
@@ -117,6 +119,8 @@ public class MaskPasswordsOutputStream extends LineTransformationOutputStream {
         this(logger, passwords, null);
     }
 
+    // TODO: The logic relies on the default encoding, which may cause issues when master and agent have different encodings
+    @SuppressFBWarnings(value = "DM_DEFAULT_ENCODING", justification = "Open TODO item for wider rework")
     @Override
     protected void eol(byte[] bytes, int len) throws IOException {
         String line = new String(bytes, 0, len);

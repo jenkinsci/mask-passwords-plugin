@@ -30,6 +30,7 @@ import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
@@ -61,6 +62,7 @@ import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.jvnet.localizer.Localizable;
 import org.jvnet.localizer.ResourceBundleHolder;
+import org.kohsuke.accmod.Restricted;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
@@ -222,8 +224,8 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
 
     /**
      * Represents name/password entries defined by users in their jobs.
-     * <p>Equality and hashcode are based on {@code var} only, not
-     * {@code password}.</p>
+     * Equality and hashcode are based on {@code var} only, not {@code password}.
+     * If the class gets extended, a <code>clone()</code> method must be implemented without <code>super.clone()</code> calls.
      */
     public static class VarPasswordPair implements Cloneable {
 
@@ -237,6 +239,8 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         }
 
         @Override
+        @SuppressFBWarnings(value = "CN_IDIOM_NO_SUPER_CALL", justification = "We do not expect anybody to use this class."
+                + "If they do, they must override clone() as well")
         public Object clone() {
             return new VarPasswordPair(getVar(), getPassword());
         }
@@ -279,6 +283,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
 
     /**
      * Represents regexes defined by users in their jobs.
+     * If the class gets extended, a <code>clone()</code> method must be implemented without <code>super.clone()</code> calls.
      */
     public static class VarMaskRegex implements Cloneable {
 
@@ -290,6 +295,8 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         }
 
         @Override
+        @SuppressFBWarnings(value = "CN_IDIOM_NO_SUPER_CALL", justification = "We do not expect anybody to use this class."
+                + "If they do, they must override clone() as well")
         public Object clone() {
             return new VarMaskRegex(getRegex());
         }

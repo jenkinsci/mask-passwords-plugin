@@ -25,17 +25,22 @@
  */
 package com.michelin.cio.hudson.plugins.passwordparam;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.EnvVars;
 import hudson.model.AbstractBuild;
 import hudson.model.ParameterValue;
 import hudson.model.Run;
 import hudson.util.Secret;
 import hudson.util.VariableResolver;
+import javax.annotation.CheckForNull;
 import org.kohsuke.stapler.DataBoundConstructor;
 
+@SuppressFBWarnings(value = "SE_NO_SERIALVERSIONID", justification = "XStream does not need Serial version ID")
 public class PasswordParameterValue extends ParameterValue {
 
-    // the secret must not be stored, so the att has to become transient
+    //TODO: Can it even work with Pipeline? And it should be fine to write secrets
+    @CheckForNull
+    @SuppressFBWarnings(value = "SE_TRANSIENT_FIELD_NOT_RESTORED", justification = "The secret must not be stored, so the att has to become transient")
     private final transient Secret value;
 
     public PasswordParameterValue(String name, Secret value, String description) {
