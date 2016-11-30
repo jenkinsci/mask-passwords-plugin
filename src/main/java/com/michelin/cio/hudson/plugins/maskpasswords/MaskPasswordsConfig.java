@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.annotation.concurrent.GuardedBy;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
@@ -58,7 +59,8 @@ import org.kohsuke.stapler.StaplerRequest;
 public class MaskPasswordsConfig {
 
     private final static String CONFIG_FILE = "com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsConfig.xml";
-
+    private static Object CONFIG_FILE_LOCK = new Object();
+    @GuardedBy("CONFIG_FILE_LOCK")
     private static MaskPasswordsConfig config;
 
     /**
@@ -161,10 +163,12 @@ public class MaskPasswordsConfig {
     }
 
     public static MaskPasswordsConfig getInstance() {
-        if(config == null) {
-            config = load();
+        synchronized(CONFIG_FILE_LOCK) {
+            if(config == null) {
+                config = load();
+            }
+            return config;
         }
-        return config;
     }
 
     private static XmlFile getConfigFile() {
