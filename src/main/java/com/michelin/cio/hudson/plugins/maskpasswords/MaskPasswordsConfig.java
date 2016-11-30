@@ -296,19 +296,19 @@ public class MaskPasswordsConfig {
                         // ParameterDefinition.getDefaultParameterValue()
                         try {
                             add(paramDefClass.getMethod("getDefaultParameterValue"));
-                        } catch(Exception e) {
+                        } catch(RuntimeException e) {
                             LOGGER.log(Level.INFO, "No getDefaultParameterValue(String) method for " + paramDefClass);
                         }
                         // ParameterDefinition.createValue(String)
                         try {
                             add(paramDefClass.getMethod("createValue", String.class));
-                        } catch(Exception e) {
+                        } catch(RuntimeException e) {
                             LOGGER.log(Level.INFO, "No createValue(String) method for " + paramDefClass);
                         }
                         // ParameterDefinition.createValue(org.kohsuke.stapler.StaplerRequest, net.sf.json.JSONObjec)
                         try {
                             add(paramDefClass.getMethod("createValue", StaplerRequest.class, JSONObject.class));
-                        }  catch (Exception e) {
+                        }  catch (RuntimeException e) {
                             LOGGER.log(Level.INFO, "No createValue(StaplerRequest, JSONObject) method for " + paramDefClass);
                         }
                     }};
