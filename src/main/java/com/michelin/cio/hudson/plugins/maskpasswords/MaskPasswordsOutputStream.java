@@ -25,6 +25,7 @@
 
 package com.michelin.cio.hudson.plugins.maskpasswords;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.console.LineTransformationOutputStream;
 import org.apache.commons.lang.StringUtils;
 
@@ -118,13 +119,15 @@ public class MaskPasswordsOutputStream extends LineTransformationOutputStream {
         this(logger, passwords, null);
     }
 
+    // TODO: The logic relies on the default encoding, which may cause issues when master and agent have different encodings
+    @SuppressFBWarnings(value = "DM_DEFAULT_ENCODING", justification = "Open TODO item for wider rework")
     @Override
     protected void eol(byte[] bytes, int len) throws IOException {
-        String line = new String(bytes, 0, len, "UTF-8");
+        String line = new String(bytes, 0, len);
         if(passwordsAsPattern != null) {
             line = passwordsAsPattern.matcher(line).replaceAll(MASKED_PASSWORD);
         }
-        logger.write(line.getBytes("UTF-8"));
+        logger.write(line.getBytes());
     }
 
     /**
