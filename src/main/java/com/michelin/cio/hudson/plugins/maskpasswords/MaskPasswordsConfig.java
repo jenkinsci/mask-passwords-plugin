@@ -181,7 +181,7 @@ public class MaskPasswordsConfig {
         
         // default values for the first time the config is created
         addMaskedPasswordParameterDefinition(hudson.model.PasswordParameterDefinition.class.getName());
-        addMaskedPasswordParameterDefinition(com.michelin.cio.hudson.plugins.passwordparam.PasswordParameterDefinition.class.getName()); 
+        addMaskedPasswordParameterDefinition(com.michelin.cio.hudson.plugins.passwordparam.PasswordParameterDefinition.class.getName());
     }
     
     public synchronized void clear() {
@@ -420,9 +420,27 @@ public class MaskPasswordsConfig {
      * @param parameterTypes Parameters
      */
     private synchronized void tryProcessMethod(Class<?> clazz, String methodName, boolean expectedToExist, Class<?> ... parameterTypes) {
+        
+        final Method method;
         try {
-            Method method = clazz.getMethod(methodName, parameterTypes);
-            Class<?> returnType = method.getReturnType();
+            method = clazz.getMethod(methodName, parameterTypes);
+        } catch (NoSuchMethodException ex) {
+            Level logLevel = expectedToExist ? Level.INFO : Level.CONFIG;
+            if (LOGGER.isLoggable(logLevel)) {
+                String methodSpec = String.format("%s(%s)", methodName, StringUtils.join(parameterTypes, ","));
+                LOGGER.log(logLevel, "No method {0} for class {1}", new Object[] {methodSpec, clazz});
+            }
+            return;
+        } catch (RuntimeException ex) {
+            Level logLevel = expectedToExist ? Level.INFO : Level.CONFIG;
+            if (LOGGER.isLoggable(logLevel)) {
+                String methodSpec = String.format("%s(%s)", methodName, StringUtils.join(parameterTypes, ","));
+                LOGGER.log(logLevel, "Failed to retrieve the method {0} for class {1}", new Object[] {methodSpec, clazz});
+            }
+            return;
+        }
+        
+        Class<?> returnType = method.getReturnType();
             // We do not veto the the root class
             if (ParameterValue.class.isAssignableFrom(returnType)) {
                 if (!ParameterValue.class.equals(returnType)) {
@@ -430,13 +448,6 @@ public class MaskPasswordsConfig {
                     paramValueCache_maskedClasses.add(returnType.getName());
                 }
             }
-        } catch (Exception ex) {
-            Level logLevel = expectedToExist ? Level.INFO : Level.CONFIG;
-            if (LOGGER.isLoggable(logLevel)) {
-                String methodSpec = String.format("%s(%s)", methodName, StringUtils.join(parameterTypes, ","));
-                LOGGER.log(logLevel, "No method {0} for class {1}", new Object[] {methodSpec, clazz});
-            }
-        }
     }
 
     /**
