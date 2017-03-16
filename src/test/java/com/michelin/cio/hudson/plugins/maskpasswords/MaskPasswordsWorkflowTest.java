@@ -66,7 +66,7 @@ public class MaskPasswordsWorkflowTest {
 
     @Before
     public void dropCache() {
-        MaskPasswordsConfig.getInstance().clear();
+        MaskPasswordsConfig.getInstance().reset();
     }
     
     @Test

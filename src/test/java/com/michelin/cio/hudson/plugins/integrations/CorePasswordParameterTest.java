@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.michelin.cio.hudson.plugins.passwordparam;
+package com.michelin.cio.hudson.plugins.integrations;
 
 import com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper;
 import com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsConfig;
@@ -31,10 +31,10 @@ import hudson.model.BuildListener;
 import hudson.model.Cause;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
-import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
-import hudson.model.ParametersAction;
 import hudson.model.ParametersDefinitionProperty;
+import hudson.model.PasswordParameterDefinition;
+import hudson.model.PasswordParameterValue;
 import hudson.model.Result;
 import hudson.util.Secret;
 import java.io.IOException;
@@ -53,7 +53,7 @@ import org.jvnet.hudson.test.TestBuilder;
  * Tests of {@link PasswordParameterValue} and {@link PasswordParameterDefinition}.
  * @author bpmarinho
  */
-public class PasswordParameterTest {
+public class CorePasswordParameterTest {
     
     @ClassRule
     public static BuildWatcher buildWatcher = new BuildWatcher();
@@ -63,21 +63,19 @@ public class PasswordParameterTest {
     
     @Before
     public void dropCache() {
-        MaskPasswordsConfig.getInstance().reset();
+        MaskPasswordsConfig.getInstance().clear();
     }
     
     @Test
-    @Issue("JENKINS-41955")
     public void shouldMaskPasswordParameterClassByDefault() {
         Assert.assertTrue( PasswordParameterValue.class + " must be masked by default",
             MaskPasswordsConfig.getInstance().isMasked(PasswordParameterValue.class.getName()));
     }
     
     @Test
-    @Issue("JENKINS-41955")
     public void shouldMaskPasswordParameterValueByDefault() {
-        PasswordParameterDefinition d = new PasswordParameterDefinition("FOO", "BAR");
-        ParameterValue created = d.createValue(Secret.fromString("hello"));
+        PasswordParameterDefinition d = new PasswordParameterDefinition("FOO", "myPassword", "BAR");
+        ParameterValue created = d.createValue("hello");
         
         // We pass the non-existent class name in order to ensure that the Value metadata check is enough
         Assert.assertTrue( PasswordParameterValue.class + " must be masked by default",
@@ -94,7 +92,8 @@ public class PasswordParameterTest {
         FreeStyleProject project
                 = j.jenkins.createProject(FreeStyleProject.class, "testPasswordParameter");
 
-        PasswordParameterDefinition passwordParameterDefinition = new PasswordParameterDefinition("Password1", null);
+        PasswordParameterDefinition passwordParameterDefinition
+                = new hudson.model.PasswordParameterDefinition("Password1", clearTextPassword, null);
         ParametersDefinitionProperty parametersDefinitionProperty
                 = new ParametersDefinitionProperty(passwordParameterDefinition);
         project.addProperty(parametersDefinitionProperty);
@@ -112,10 +111,7 @@ public class PasswordParameterTest {
             }
         });
 
-        FreeStyleBuild build = project.scheduleBuild2(0, new Cause.UserIdCause(), 
-                new ParametersAction(passwordParameterDefinition.createValue(Secret.fromString(clearTextPassword))))
-                .get();
-        j.assertBuildStatusSuccess(j.waitForCompletion(build));
+        FreeStyleBuild build = j.buildAndAssertSuccess(project);
         j.assertLogContains(logWithHiddenPassword, build);
         j.assertLogNotContains(logWithClearTextPassword, build);
     }

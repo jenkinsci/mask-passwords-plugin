@@ -55,7 +55,7 @@ public class MaskPasswordsURLEncodingTest {
 
     @Before
     public void dropCache() {
-        MaskPasswordsConfig.getInstance().clear();
+        MaskPasswordsConfig.getInstance().reset();
     }
     
     @Test

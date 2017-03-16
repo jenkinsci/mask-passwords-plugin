@@ -24,12 +24,12 @@
 
 package com.michelin.cio.hudson.plugins.maskpasswords;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper.VarPasswordPair;
 import com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper.VarMaskRegex;
 import hudson.ExtensionList;
 import hudson.XmlFile;
 import hudson.cli.CLICommand;
-import hudson.model.Hudson;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterDefinition.ParameterDescriptor;
 import hudson.model.ParameterValue;
@@ -52,6 +52,8 @@ import javax.annotation.concurrent.GuardedBy;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.StaplerRequest;
 
 /**
@@ -116,11 +118,7 @@ public class MaskPasswordsConfig {
 
     public MaskPasswordsConfig() {
         maskPasswordsParamDefClasses = new LinkedHashSet<String>();
-
-        // default values for the first time the config is created
-        addMaskedPasswordParameterDefinition(hudson.model.PasswordParameterDefinition.class.getName());
-        addMaskedPasswordParameterDefinition(com.michelin.cio.hudson.plugins.passwordparam.PasswordParameterDefinition.class.getName());
-        globalVarEnableGlobally = false;
+        reset();
     }
 
     /**
@@ -172,6 +170,20 @@ public class MaskPasswordsConfig {
       globalVarEnableGlobally = state;
     }
 
+    /**
+     * Resets configuration to the default state.
+     */
+    @Restricted(NoExternalUse.class)
+    @VisibleForTesting
+    public final synchronized void reset() {
+        // Wipe the data
+        clear();
+        
+        // default values for the first time the config is created
+        addMaskedPasswordParameterDefinition(hudson.model.PasswordParameterDefinition.class.getName());
+        addMaskedPasswordParameterDefinition(com.michelin.cio.hudson.plugins.passwordparam.PasswordParameterDefinition.class.getName()); 
+    }
+    
     public synchronized void clear() {
         maskPasswordsParamDefClasses.clear();
         getGlobalVarPasswordPairsList().clear();
