@@ -39,12 +39,15 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
 import javax.annotation.concurrent.GuardedBy;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
@@ -68,12 +71,23 @@ public class MaskPasswordsConfig {
      * Contains the set of {@link ParameterDefinition}s whose value must be
      * masked in builds' console.
      */
+    @GuardedBy("this")
     private Set<String> maskPasswordsParamDefClasses;
     /**
      * Contains the set of {@link ParameterValue}s whose value must be masked in
      * builds' console.
      */
-    private transient Set<String> maskPasswordsParamValueClasses;
+    @Nonnull
+    @GuardedBy("this")
+    private final transient Set<String> paramValueCache_maskedClasses = new HashSet<String>();
+    
+    /**
+     * Cache of values, which are not subjects for masking. 
+     */
+    @Nonnull
+    @GuardedBy("this")
+    private final transient Set<String> paramValueCache_nonMaskedClasses = new HashSet<String>();
+    
     /**
      * Users can define name/password pairs at the global level to share common
      * passwords with several jobs.
@@ -148,19 +162,29 @@ public class MaskPasswordsConfig {
      *                  to the list of parameters which will prevent the rebuild
      *                  action to be enabled for a build
      */
-    public void addMaskedPasswordParameterDefinition(String className) {
+    public synchronized void addMaskedPasswordParameterDefinition(String className) {
         maskPasswordsParamDefClasses.add(className);
+        // Maybe is it masked now
+        paramValueCache_nonMaskedClasses.clear();
     }
 
     public void setGlobalVarEnabledGlobally(boolean state) {
       globalVarEnableGlobally = state;
     }
 
-    public void clear() {
+    public synchronized void clear() {
         maskPasswordsParamDefClasses.clear();
         getGlobalVarPasswordPairsList().clear();
         getGlobalVarMaskRegexesList().clear();
         globalVarEnableGlobally = false;
+        
+        // Drop caches
+        invalidatePasswordValueClassCaches();
+    }
+    
+    public synchronized void invalidatePasswordValueClassCaches() {
+        paramValueCache_maskedClasses.clear();
+        paramValueCache_nonMaskedClasses.clear();
     }
 
     public static MaskPasswordsConfig getInstance() {
@@ -273,82 +297,130 @@ public class MaskPasswordsConfig {
     }
 
     /**
+     * Check if the parameter value class needs to be masked
+     * @deprecated There is a high risk of false-negatives. Use {@link #isMasked(hudson.model.ParameterValue, java.lang.String)} at least
+     * @param paramValueClassName Class name of the {@link ParameterValue}
+     * @return {@code true} if the parameter value should be masked.
+     *         {@code false} if the plugin is not sure, may be false-negative 
+     */
+    @Deprecated
+    public synchronized boolean isMasked(final @Nonnull String paramValueClassName) {
+        return isMasked(null, paramValueClassName);
+    }
+    
+    /**
      * Returns true if the specified parameter value class name corresponds to
      * a parameter definition class name selected in Jenkins' main
      * configuration screen.
+     * @param value Parameter value. Without it there is a high risk of false negatives.
+     * @param paramValueClassName Class name of the {@link ParameterValue} class implementation
+     * @return {@code true} if the parameter value should be masked.
+     *         {@code false} if the plugin is not sure, may be false-negative especially if the value is {@code null}.
+     * @since TODO
      */
-    public synchronized boolean isMasked(String paramValueClassName) {
-        try {
-            // do we need to build the set of parameter values which must be
-            // masked?
-            if(maskPasswordsParamValueClasses == null) {
-                maskPasswordsParamValueClasses = new LinkedHashSet<String>();
-
-                // The only way to find parameter definition/parameter value
-                // couples is to reflect the methods of parameter definition
-                // classes which instantiate the parameter value.
-                // This means that this algorithm expects that the developers do
-                // clearly redefine the return type when implementing parameter
-                // definitions/values.
-                for(String paramDefClassName: maskPasswordsParamDefClasses) {
-                    final Class paramDefClass = Jenkins.getActiveInstance().getPluginManager().uberClassLoader.loadClass(paramDefClassName);
-
-                    List<Method> methods = new ArrayList<Method>() {{
-                        // ParameterDefinition.getDefaultParameterValue()
-                        try {
-                            add(paramDefClass.getMethod("getDefaultParameterValue"));
-                        } catch(RuntimeException e) {
-                            LOGGER.log(Level.INFO, "No getDefaultParameterValue(String) method for {0}", paramDefClass);
-                        }
-                        // ParameterDefinition.createValue(String)
-                        // This method does not exist anymore, but many classes still use it
-                        try {
-                            add(paramDefClass.getMethod("createValue", String.class));
-                        } catch(RuntimeException e) {
-                            LOGGER.log(Level.INFO, "No createValue(String) method for {0}", paramDefClass);
-                        }
-                        // ParameterDefinition.createValue(org.kohsuke.stapler.StaplerRequest, net.sf.json.JSONObject)
-                        try {
-                            add(paramDefClass.getMethod("createValue", StaplerRequest.class, JSONObject.class));
-                        }  catch (RuntimeException e) {
-                            LOGGER.log(Level.INFO, "No createValue(StaplerRequest, JSONObject) method for {0}", paramDefClass);
-                        }
-                        // ParameterDefinition.createValue(org.kohsuke.stapler.StaplerRequest)
-                        try {
-                            add(paramDefClass.getMethod("createValue", StaplerRequest.class));
-                        }  catch (RuntimeException e) {
-                            LOGGER.log(Level.INFO, "No createValue(StaplerRequest) method for {0}", paramDefClass);
-                        }
-                        // ParameterDefinition.createValue(CLICommand command, String value)
-                        try {
-                            add(paramDefClass.getMethod("createValue", CLICommand.class, String.class));
-                        } catch(RuntimeException e) {
-                            LOGGER.log(Level.INFO, "No createValue(CLICommand, String) method for {0}", paramDefClass);
-                        }
-                    }};
-
-                    // If the class defines any method, we consider it as a ParameterDefinition.
-                    // This parameter definition may produce any ParameterValue, and effectively we cannot guarantee the 
-                    // value is a type or a subtype of the requested parameter.
-                    if(!methods.isEmpty()) {
-                        maskPasswordsParamValueClasses.add(paramValueClassName);
-                    }
-                }
+    public boolean isMasked(final @CheckForNull ParameterValue value, 
+            final @Nonnull String paramValueClassName) {
+        
+        // We always mask sensitive variables, the configuration does not matter in such case
+        if (value != null && value.isSensitive()) {
+            return true;
+        }
+        
+        synchronized(this) {
+            // Check if the value is in the cache
+            if (paramValueCache_maskedClasses.contains(paramValueClassName)) {
+                return true;
+            }
+            if (paramValueCache_nonMaskedClasses.contains(paramValueClassName)) {
+                return false;
+            }
+         
+            // Now guess
+            boolean guessSo = guessIfShouldMask(paramValueClassName);
+            if (guessSo) {
+                // We are pretty sure it requires masking
+                paramValueCache_maskedClasses.add(paramValueClassName);
+                return true;
+            } else {
+                // It does not require masking, but we are not so sure
+                // The warning will be printed each time the cache is invalidated due to whatever reason
+                LOGGER.log(Level.WARNING, "Identified the {0} class as a ParameterValue class, which does not require masking. It may be false-negative", paramValueClassName);
+                paramValueCache_nonMaskedClasses.add(paramValueClassName);
+                return false;
             }
         }
-        catch(Exception e) {
-            LOGGER.log(Level.WARNING, "Error while initializing Mask Passwords: " + e);
-            return false;
+    }
+    
+    //TODO: add support of specifying masked parameter values byt the... parameter value classs name. So obvious, yeah?
+    /**
+     * Tries to guess if the parameter value class should be masked.
+     * @param paramValueClassName Parameter value class name
+     * @return {@code true} if we are sure that the class has to be masked
+     *         {@code false} otherwise, there is a risk of false negative due to the presumptions.
+     */
+    /*package*/ synchronized boolean guessIfShouldMask(final @Nonnull String paramValueClassName) {
+        // The only way to find parameter definition/parameter value
+        // couples is to reflect the methods of parameter definition
+        // classes which instantiate the parameter value.
+        // This means that this algorithm expects that the developers do
+        // clearly redefine the return type when implementing parameter
+        // definitions/values.
+        for(String paramDefClassName: maskPasswordsParamDefClasses) {
+            final Class<?> paramDefClass;
+            try {
+                paramDefClass = Jenkins.getActiveInstance().getPluginManager().uberClassLoader.loadClass(paramDefClassName);
+            } catch (ClassNotFoundException ex) {
+                LOGGER.log(Level.WARNING, "Cannot check ParamDef for masking " + paramDefClassName, ex);
+                continue;
+            }
+
+            tryProcessMethod(paramDefClass, "getDefaultParameterValue", true);
+            tryProcessMethod(paramDefClass, "createValue", true, StaplerRequest.class, JSONObject.class);
+            tryProcessMethod(paramDefClass, "createValue", true, StaplerRequest.class);
+            tryProcessMethod(paramDefClass, "createValue", true, CLICommand.class, String.class);
+            // This custom implementation is not a part of the API, but let's try it
+            tryProcessMethod(paramDefClass, "createValue", false, String.class);
+            
+            // If the parameter value class has been added to the cache, exit
+            if (paramValueCache_maskedClasses.contains(paramValueClassName)) {
+                return true;
+            }
         }
 
-        return maskPasswordsParamValueClasses.contains(paramValueClassName);
+        return false;
+    }
+    
+    /**
+     * Processes the methods in the {@link ParameterValue} class and caches all ParameterValue implementations as ones requiring masking.
+     * @param clazz Class
+     * @param methodName Method name
+     * @param parameterTypes Parameters
+     */
+    private synchronized void tryProcessMethod(Class<?> clazz, String methodName, boolean expectedToExist, Class<?> ... parameterTypes) {
+        try {
+            Method method = clazz.getMethod(methodName, parameterTypes);
+            Class<?> returnType = method.getReturnType();
+            // We do not veto the the root class
+            if (ParameterValue.class.isAssignableFrom(returnType)) {
+                if (!ParameterValue.class.equals(returnType)) {
+                    // Add this class to the cache
+                    paramValueCache_maskedClasses.add(returnType.getName());
+                }
+            }
+        } catch (Exception ex) {
+            Level logLevel = expectedToExist ? Level.INFO : Level.CONFIG;
+            if (LOGGER.isLoggable(logLevel)) {
+                String methodSpec = String.format("%s(%s)", methodName, StringUtils.join(parameterTypes, ","));
+                LOGGER.log(logLevel, "No method {0} for class {1}", new Object[] {methodSpec, clazz});
+            }
+        }
     }
 
     /**
      * Returns true if the specified parameter definition class name has been
-     * selected in Hudson's/Jenkins' main configuration screen.
+     * selected in Jenkins main configuration screen.
      */
-    public boolean isSelected(String paramDefClassName) {
+    public synchronized boolean isSelected(String paramDefClassName) {
         return maskPasswordsParamDefClasses.contains(paramDefClassName);
     }
 

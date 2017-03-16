@@ -31,15 +31,17 @@ import hudson.model.BuildListener;
 import hudson.model.Cause;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
+import hudson.model.ParameterDefinition;
+import hudson.model.ParameterValue;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Result;
+import hudson.util.Secret;
 import java.io.IOException;
 import java.util.Collections;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runners.model.Statement;
 import org.jvnet.hudson.test.BuildWatcher;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -62,6 +64,17 @@ public class PasswordParameterTest {
     public void shouldMaskPasswordParameterClassByDefault() {
         Assert.assertTrue( PasswordParameterValue.class + " must be masked by default",
             MaskPasswordsConfig.getInstance().isMasked(PasswordParameterValue.class.getName()));
+    }
+    
+    @Test
+    @Issue("JENKINS-41955")
+    public void shouldMaskPasswordParameterValueByDefault() {
+        PasswordParameterDefinition d = new PasswordParameterDefinition("FOO", "BAR");
+        ParameterValue created = d.createValue(Secret.fromString("hello"));
+        
+        // We pass the non-existent class name in order to ensure that the Value metadata check is enough
+        Assert.assertTrue( PasswordParameterValue.class + " must be masked by default",
+            MaskPasswordsConfig.getInstance().isMasked(created, "nonExistent"));
     }
     
     @Test

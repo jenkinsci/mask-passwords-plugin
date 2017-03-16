@@ -129,7 +129,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         ParametersAction params = build.getAction(ParametersAction.class);
         if(params != null) {
             for(ParameterValue param : params) {
-                if(config.isMasked(param.getClass().getName())) {
+                if(config.isMasked(param, param.getClass().getName())) {
                     EnvVars env = new EnvVars();
                     param.buildEnvironment(build, env);
                     String password = env.get(param.getName());
