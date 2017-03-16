@@ -284,7 +284,7 @@ public class MaskPasswordsConfig {
                 maskPasswordsParamValueClasses = new LinkedHashSet<String>();
 
                 // The only way to find parameter definition/parameter value
-                // couples is to reflect the 3 methods of parameter definition
+                // couples is to reflect the methods of parameter definition
                 // classes which instantiate the parameter value.
                 // This means that this algorithm expects that the developers do
                 // clearly redefine the return type when implementing parameter
@@ -305,16 +305,25 @@ public class MaskPasswordsConfig {
                         } catch(RuntimeException e) {
                             LOGGER.log(Level.INFO, "No createValue(String) method for " + paramDefClass);
                         }
-                        // ParameterDefinition.createValue(org.kohsuke.stapler.StaplerRequest, net.sf.json.JSONObjec)
+                        // ParameterDefinition.createValue(org.kohsuke.stapler.StaplerRequest, net.sf.json.JSONObject)
                         try {
                             add(paramDefClass.getMethod("createValue", StaplerRequest.class, JSONObject.class));
                         }  catch (RuntimeException e) {
                             LOGGER.log(Level.INFO, "No createValue(StaplerRequest, JSONObject) method for " + paramDefClass);
                         }
+                        // ParameterDefinition.createValue(org.kohsuke.stapler.StaplerRequest)
+                        try {
+                            add(paramDefClass.getMethod("createValue", StaplerRequest.class));
+                        }  catch (Exception e) {
+                            LOGGER.log(Level.INFO, "No createValue(StaplerRequest) method for " + paramDefClass);
+                        }
                     }};
 
-                    for(Method m: methods) {
-                        maskPasswordsParamValueClasses.add(m.getReturnType().getName());
+                    // If the class defines any method, we consider it as a ParameterDefinition.
+                    // This parameter definition may produce any ParameterValue, and effectively we cannot guarantee the 
+                    // value is a type or a subtype of the requested parameter.
+                    if(!methods.isEmpty()) {
+                        maskPasswordsParamValueClasses.add(paramValueClassName);
                     }
                 }
             }
