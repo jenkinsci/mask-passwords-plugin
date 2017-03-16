@@ -28,6 +28,7 @@ import com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper.V
 import com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper.VarMaskRegex;
 import hudson.ExtensionList;
 import hudson.XmlFile;
+import hudson.cli.CLICommand;
 import hudson.model.Hudson;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterDefinition.ParameterDescriptor;
@@ -297,25 +298,32 @@ public class MaskPasswordsConfig {
                         try {
                             add(paramDefClass.getMethod("getDefaultParameterValue"));
                         } catch(RuntimeException e) {
-                            LOGGER.log(Level.INFO, "No getDefaultParameterValue(String) method for " + paramDefClass);
+                            LOGGER.log(Level.INFO, "No getDefaultParameterValue(String) method for {0}", paramDefClass);
                         }
                         // ParameterDefinition.createValue(String)
+                        // This method does not exist anymore, but many classes still use it
                         try {
                             add(paramDefClass.getMethod("createValue", String.class));
                         } catch(RuntimeException e) {
-                            LOGGER.log(Level.INFO, "No createValue(String) method for " + paramDefClass);
+                            LOGGER.log(Level.INFO, "No createValue(String) method for {0}", paramDefClass);
                         }
                         // ParameterDefinition.createValue(org.kohsuke.stapler.StaplerRequest, net.sf.json.JSONObject)
                         try {
                             add(paramDefClass.getMethod("createValue", StaplerRequest.class, JSONObject.class));
                         }  catch (RuntimeException e) {
-                            LOGGER.log(Level.INFO, "No createValue(StaplerRequest, JSONObject) method for " + paramDefClass);
+                            LOGGER.log(Level.INFO, "No createValue(StaplerRequest, JSONObject) method for {0}", paramDefClass);
                         }
                         // ParameterDefinition.createValue(org.kohsuke.stapler.StaplerRequest)
                         try {
                             add(paramDefClass.getMethod("createValue", StaplerRequest.class));
-                        }  catch (Exception e) {
-                            LOGGER.log(Level.INFO, "No createValue(StaplerRequest) method for " + paramDefClass);
+                        }  catch (RuntimeException e) {
+                            LOGGER.log(Level.INFO, "No createValue(StaplerRequest) method for {0}", paramDefClass);
+                        }
+                        // ParameterDefinition.createValue(CLICommand command, String value)
+                        try {
+                            add(paramDefClass.getMethod("createValue", CLICommand.class, String.class));
+                        } catch(RuntimeException e) {
+                            LOGGER.log(Level.INFO, "No createValue(CLICommand, String) method for {0}", paramDefClass);
                         }
                     }};
 
