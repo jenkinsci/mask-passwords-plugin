@@ -398,8 +398,19 @@ public class MaskPasswordsConfig {
                 return true;
             }
         }
-
-        return false;
+        
+        // Always mask the hudson.model.PasswordParameterValue class and its overrides
+        // This class does not comply with the criteria above, but it is sensitive starting from 1.378
+        final Class<?> valueClass;
+        try {
+            valueClass = Jenkins.getActiveInstance().getPluginManager().uberClassLoader.loadClass(paramValueClassName);
+        } catch (Exception ex) {
+            // Move on. Whatever happens here, it will blow up somewhere else
+            LOGGER.log(Level.FINE, "Failed to load class for the ParameterValue " + paramValueClassName, ex);
+            return false;
+        }
+        
+        return hudson.model.PasswordParameterValue.class.isAssignableFrom(valueClass);
     }
     
     /**

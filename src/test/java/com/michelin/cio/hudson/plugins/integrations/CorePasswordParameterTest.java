@@ -63,7 +63,7 @@ public class CorePasswordParameterTest {
     
     @Before
     public void dropCache() {
-        MaskPasswordsConfig.getInstance().clear();
+        MaskPasswordsConfig.getInstance().reset();
     }
     
     @Test
@@ -80,6 +80,22 @@ public class CorePasswordParameterTest {
         // We pass the non-existent class name in order to ensure that the Value metadata check is enough
         Assert.assertTrue( PasswordParameterValue.class + " must be masked by default",
             MaskPasswordsConfig.getInstance().isMasked(created, "nonExistent"));
+    }
+    
+    @Test
+    public void shouldMaskPasswordParameterChildrenValueByValue() {
+        ParameterValue created = new MyPasswordParameter();
+        
+        // We pass the non-existent class name in order to ensure that the Value metadata check is enough
+        Assert.assertTrue(PasswordParameterValue.class + " must be masked by default",
+            MaskPasswordsConfig.getInstance().isMasked(created, "nonExistent"));
+    }
+    
+    @Test
+    public void shouldMaskPasswordParameterChildrenValueByClass() {
+        // We pass the non-existent class name in order to ensure that the Value metadata check is enough
+        Assert.assertTrue(PasswordParameterValue.class + " must be masked by the class name",
+            MaskPasswordsConfig.getInstance().isMasked(MyPasswordParameter.class.getName()));
     }
     
     @Test
@@ -114,5 +130,14 @@ public class CorePasswordParameterTest {
         FreeStyleBuild build = j.buildAndAssertSuccess(project);
         j.assertLogContains(logWithHiddenPassword, build);
         j.assertLogNotContains(logWithClearTextPassword, build);
+    }
+    
+    private static final class MyPasswordParameter extends hudson.model.PasswordParameterValue {
+
+        private static final long serialVersionUID = 1L;
+        
+        public MyPasswordParameter() {
+            super("MYPASSWORD", "qwerty123");
+        }
     }
 }
