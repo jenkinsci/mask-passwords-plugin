@@ -182,7 +182,7 @@ public class MaskPasswordsConfig {
         invalidatePasswordValueClassCaches();
     }
     
-    public synchronized void invalidatePasswordValueClassCaches() {
+    /*package*/ synchronized void invalidatePasswordValueClassCaches() {
         paramValueCache_maskedClasses.clear();
         paramValueCache_nonMaskedClasses.clear();
     }

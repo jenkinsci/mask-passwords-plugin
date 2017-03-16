@@ -39,6 +39,7 @@ import hudson.util.Secret;
 import java.io.IOException;
 import java.util.Collections;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -58,6 +59,11 @@ public class PasswordParameterTest {
     
     @Rule
     public JenkinsRule j = new JenkinsRule();
+    
+    @Before
+    public void dropCache() {
+        MaskPasswordsConfig.getInstance().clear();
+    }
     
     @Test
     @Issue("JENKINS-41955")

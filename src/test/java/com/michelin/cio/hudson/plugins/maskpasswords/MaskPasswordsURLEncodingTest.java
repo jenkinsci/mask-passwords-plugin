@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.Set;
 import java.util.TreeSet;
+import org.junit.Before;
 
 @Issue("JENKINS-34908")
 public class MaskPasswordsURLEncodingTest {
@@ -52,7 +53,11 @@ public class MaskPasswordsURLEncodingTest {
     @Rule
     public RestartableJenkinsRule story = new RestartableJenkinsRule();
 
-
+    @Before
+    public void dropCache() {
+        MaskPasswordsConfig.getInstance().clear();
+    }
+    
     @Test
     public void passwordMaskedEncoded() throws Exception {
         story.addStep(new Statement() {

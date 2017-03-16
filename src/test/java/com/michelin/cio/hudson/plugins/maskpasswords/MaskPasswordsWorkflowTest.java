@@ -47,6 +47,7 @@ import org.jenkinsci.plugins.workflow.steps.StepConfigTester;
 import org.jenkinsci.plugins.workflow.test.steps.SemaphoreStep;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.runners.model.Statement;
@@ -63,6 +64,11 @@ public class MaskPasswordsWorkflowTest {
     @Rule
     public RestartableJenkinsRule story = new RestartableJenkinsRule();
 
+    @Before
+    public void dropCache() {
+        MaskPasswordsConfig.getInstance().clear();
+    }
+    
     @Test
     public void configRoundTrip() throws Exception {
         story.addStep(new Statement() {
