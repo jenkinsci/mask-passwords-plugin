@@ -24,6 +24,7 @@
 package com.michelin.cio.hudson.plugins.passwordparam;
 
 import com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper;
+import com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsConfig;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
@@ -34,13 +35,14 @@ import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Result;
 import java.io.IOException;
 import java.util.Collections;
+import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runners.model.Statement;
 import org.jvnet.hudson.test.BuildWatcher;
 import org.jvnet.hudson.test.Issue;
-import org.jvnet.hudson.test.RestartableJenkinsRule;
+import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.TestBuilder;
 
 /**
@@ -53,45 +55,47 @@ public class PasswordParameterTest {
     public static BuildWatcher buildWatcher = new BuildWatcher();
     
     @Rule
-    public RestartableJenkinsRule story = new RestartableJenkinsRule();
+    public JenkinsRule j = new JenkinsRule();
+    
+    @Test
+    @Issue("JENKINS-41955")
+    public void shouldMaskPasswordParameterClassByDefault() {
+        Assert.assertTrue( PasswordParameterValue.class + " must be masked by default",
+            MaskPasswordsConfig.getInstance().isMasked(PasswordParameterValue.class.getName()));
+    }
     
     @Test
     @Issue("JENKINS-41955")
     public void passwordParameterShouldBeMaskedInFreestyleProject() throws Exception {
-        story.addStep(new Statement() {
-            String clearTextPassword = "myClearTextPassword";
-            String logWithClearTextPassword = "printed " + clearTextPassword + " oops";
-            String logWithHiddenPassword = "printed ******** oops";
-            
+        final String clearTextPassword = "myClearTextPassword";
+        final String logWithClearTextPassword = "printed " + clearTextPassword + " oops";
+        final String logWithHiddenPassword = "printed ******** oops";
+
+        FreeStyleProject project
+                = j.jenkins.createProject(FreeStyleProject.class, "testPasswordParameter");
+
+        hudson.model.PasswordParameterDefinition passwordParameterDefinition
+                = new hudson.model.PasswordParameterDefinition("Password1", clearTextPassword, null);
+        ParametersDefinitionProperty parametersDefinitionProperty
+                = new ParametersDefinitionProperty(passwordParameterDefinition);
+        project.addProperty(parametersDefinitionProperty);
+
+        MaskPasswordsBuildWrapper maskPasswordsBuildWrapper
+                = new MaskPasswordsBuildWrapper(Collections.<MaskPasswordsBuildWrapper.VarPasswordPair>emptyList());
+        project.getBuildWrappersList().add(maskPasswordsBuildWrapper);
+
+        project.getBuildersList().add(new TestBuilder() {
             @Override
-            public void evaluate() throws Throwable {
-                FreeStyleProject project =
-                        story.j.jenkins.createProject(FreeStyleProject.class, "testPasswordParameter");
-                
-                hudson.model.PasswordParameterDefinition passwordParameterDefinition =
-                        new hudson.model.PasswordParameterDefinition("Password1", clearTextPassword, null);
-                ParametersDefinitionProperty parametersDefinitionProperty =
-                        new ParametersDefinitionProperty(passwordParameterDefinition);
-                project.addProperty(parametersDefinitionProperty);
-                
-                MaskPasswordsBuildWrapper maskPasswordsBuildWrapper =
-                        new MaskPasswordsBuildWrapper(Collections.<MaskPasswordsBuildWrapper.VarPasswordPair>emptyList());
-                project.getBuildWrappersList().add(maskPasswordsBuildWrapper);
-                
-                project.getBuildersList().add(new TestBuilder() {
-                    @Override
-                    public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
-                        listener.getLogger().println(logWithClearTextPassword);
-                        build.setResult(Result.SUCCESS);
-                        return true;
-                    }
-                });
-                
-                FreeStyleBuild build = project.scheduleBuild2(0, new Cause.UserIdCause()).get();
-                story.j.assertBuildStatusSuccess(story.j.waitForCompletion(build));
-                story.j.assertLogContains(logWithHiddenPassword, build);
-                story.j.assertLogNotContains(logWithClearTextPassword, build);
+            public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+                listener.getLogger().println(logWithClearTextPassword);
+                build.setResult(Result.SUCCESS);
+                return true;
             }
         });
+
+        FreeStyleBuild build = project.scheduleBuild2(0, new Cause.UserIdCause()).get();
+        j.assertBuildStatusSuccess(j.waitForCompletion(build));
+        j.assertLogContains(logWithHiddenPassword, build);
+        j.assertLogNotContains(logWithClearTextPassword, build);
     }
 }
