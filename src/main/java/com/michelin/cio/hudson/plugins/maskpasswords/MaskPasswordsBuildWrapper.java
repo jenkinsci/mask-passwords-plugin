@@ -48,6 +48,7 @@ import hudson.util.Secret;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -248,7 +249,8 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
                 this.var = var;
                 this.password = getSecretConstructor().newInstance(password);
             } else {
-                this(var,password);
+                this.var = var;
+                this.password = Secret.fromString(password);
             }
         }
 
