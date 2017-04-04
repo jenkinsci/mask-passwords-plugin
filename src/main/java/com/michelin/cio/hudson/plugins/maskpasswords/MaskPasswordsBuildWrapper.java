@@ -300,8 +300,9 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
             if (SECRET_CONSTRUCTOR==null) {
                 synchronized (lock) {
                     if (SECRET_CONSTRUCTOR==null) {
-                        SECRET_CONSTRUCTOR = Secret.class.getDeclaredConstructor(String.class);
-                        SECRET_CONSTRUCTOR.setAccessible(true);
+                        Constructor<Secret> t = Secret.class.getDeclaredConstructor(String.class);
+                        t.setAccessible(true);
+                        SECRET_CONSTRUCTOR = t;
                     }
                 }
             }
