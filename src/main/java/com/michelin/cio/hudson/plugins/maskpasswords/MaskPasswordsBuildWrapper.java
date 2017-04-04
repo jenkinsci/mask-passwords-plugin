@@ -296,15 +296,11 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
             return hash;
         }
         
-        public static Constructor<Secret> getSecretConstructor() throws NoSuchMethodException {
+        public static synchronized Constructor<Secret> getSecretConstructor() throws NoSuchMethodException {
             if (SECRET_CONSTRUCTOR==null) {
-                synchronized (lock) {
-                    if (SECRET_CONSTRUCTOR==null) {
-                        Constructor<Secret> t = Secret.class.getDeclaredConstructor(String.class);
-                        t.setAccessible(true);
-                        SECRET_CONSTRUCTOR = t;
-                    }
-                }
+                    Constructor<Secret> t = Secret.class.getDeclaredConstructor(String.class);
+                    t.setAccessible(true);
+                    SECRET_CONSTRUCTOR = t;
             }
             return SECRET_CONSTRUCTOR;
         }
