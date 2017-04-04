@@ -239,7 +239,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
             this.password = Secret.fromString(password);
         }
 
-        public VarPasswordPair(String var, String password, boolean fastMethod) throws InstantiationException {
+        public VarPasswordPair(String var, String password, boolean fastMethod) {
             if (fastMethod) {
                 /**
                  * Fast method is used when cloning to avoid the performance hit of throwing an exception when attempting to decrypt
@@ -247,7 +247,11 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
                  * trigger
                  */
                 this.var = var;
-                this.password = getSecretConstructor().newInstance(password);
+                try {
+                    this.password = getSecretConstructor().newInstance(password);
+                } catch (Exception e) {
+                    // forget about it!
+                }
             } else {
                 this.var = var;
                 this.password = Secret.fromString(password);
