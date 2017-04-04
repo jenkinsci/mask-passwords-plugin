@@ -233,16 +233,25 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         private final Secret password;
 
         @DataBoundConstructor
-        public VarPasswordPair(String var, String password) {
+        public VarPasswordPair(String var, String password, boolean fastMethod=false) {
             this.var = var;
-            this.password = Secret.fromString(password);
+            if (fastMethod) {
+                /**
+                 * Fast method is used when cloning to avoid the performance hit of throwing an exception when attempting to decrypt
+                 * an already decrypted string. This is a massive performance hit in some scenarios (e.g. build pipeline, parameterized
+                 * trigger
+                 */
+                this.password = getSecretConstructor().newInstance(password);
+            } else {
+                this.password = Secret.fromString(password);
+            }
         }
 
         @Override
         @SuppressFBWarnings(value = "CN_IDIOM_NO_SUPER_CALL", justification = "We do not expect anybody to use this class."
                 + "If they do, they must override clone() as well")
         public Object clone() {
-            return new VarPasswordPair(getVar(), getPassword());
+            return new VarPasswordPair(getVar(), getPassword(), true);
         }
 
         @Override
@@ -278,7 +287,16 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
             hash = 67 * hash + (this.var != null ? this.var.hashCode() : 0);
             return hash;
         }
-
+        
+        public static Constructor<Secret> getSecretConstructor() {
+            if (SECRET_CONSTRUCTOR!=null) {
+                SECRET_CONSTRUCTOR = Secret.class.getDeclaredConstructor(String.class);
+                SECRET_CONSTRUCTOR.setAccessible(true);
+            }
+            return SECRET_CONSTRUCTOR;
+        }
+        
+        private static Constructor<Secret> SECRET_CONSTRUCTOR;
     }
 
     /**
