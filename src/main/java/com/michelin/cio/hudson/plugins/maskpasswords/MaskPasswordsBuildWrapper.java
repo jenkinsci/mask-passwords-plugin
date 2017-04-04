@@ -246,10 +246,11 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
              * trigger
              */
             this.var = var;
+            Secret t = null;
             try {
-                Secret t = getSecretConstructor().newInstance(password);
+                t = getSecretConstructor().newInstance(password);
             } catch (Exception e) {
-                Secret t = Secret.fromString(password);
+                t = Secret.fromString(password);
             }
             this.password = t;
         }
