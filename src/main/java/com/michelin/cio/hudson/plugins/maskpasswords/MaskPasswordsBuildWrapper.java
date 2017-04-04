@@ -289,7 +289,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         }
         
         public static Constructor<Secret> getSecretConstructor() {
-            if (SECRET_CONSTRUCTOR!=null) {
+            if (SECRET_CONSTRUCTOR==null) {
                 SECRET_CONSTRUCTOR = Secret.class.getDeclaredConstructor(String.class);
                 SECRET_CONSTRUCTOR.setAccessible(true);
             }
