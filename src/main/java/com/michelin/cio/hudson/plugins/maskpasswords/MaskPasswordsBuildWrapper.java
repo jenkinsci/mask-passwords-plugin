@@ -249,8 +249,6 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
             try {
                 this.password = getSecretConstructor().newInstance(password);
             } catch (Exception e) {
-                // forget about it!
-            } finally {
                 this.password = Secret.fromString(password);
             }
         }
