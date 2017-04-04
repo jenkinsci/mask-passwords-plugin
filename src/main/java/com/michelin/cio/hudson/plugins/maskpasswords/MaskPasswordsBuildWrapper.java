@@ -247,10 +247,11 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
              */
             this.var = var;
             try {
-                this.password = getSecretConstructor().newInstance(password);
+                Secret t = getSecretConstructor().newInstance(password);
             } catch (Exception e) {
-                this.password = Secret.fromString(password);
+                Secret t = Secret.fromString(password);
             }
+            this.password = t;
         }
 
         @Override
