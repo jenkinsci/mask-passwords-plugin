@@ -298,12 +298,17 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         
         public static Constructor<Secret> getSecretConstructor() throws NoSuchMethodException {
             if (SECRET_CONSTRUCTOR==null) {
-                SECRET_CONSTRUCTOR = Secret.class.getDeclaredConstructor(String.class);
-                SECRET_CONSTRUCTOR.setAccessible(true);
+                synchronized (lock) {
+                    if (SECRET_CONSTRUCTOR==null) {
+                        SECRET_CONSTRUCTOR = Secret.class.getDeclaredConstructor(String.class);
+                        SECRET_CONSTRUCTOR.setAccessible(true);
+                    }
+                }
             }
             return SECRET_CONSTRUCTOR;
         }
         
+        private static final Object lock = new Object();
         private static Constructor<Secret> SECRET_CONSTRUCTOR;
     }
 
