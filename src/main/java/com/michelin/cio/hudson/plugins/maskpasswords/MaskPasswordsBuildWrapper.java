@@ -235,25 +235,15 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         @DataBoundConstructor
         public VarPasswordPair(String var, String password) {
             this.var = var;
-            this.password = Secret.fromString(password);
-        }
-
-        /**
-         * Allow construction from a Secret object - this allows deep cloning without the overhead of an
-         * attempted (and failed) decryption cycle which throws an exception and the related overhead which
-         * can cause a massive overhead on an instance with many global mask passwords and jobs (especially
-         * when combined with the BuildPipeline plugin).
-         */
-        public VarPasswordPair(String var, Secret password) {
-            this.var = var;
-            this.password = password;
+            // Adding MAGIC on the end prevents an attempted decrypt and the associated exception overhead
+            this.password = Secret.fromString(password + Secret.MAGIC);
         }
 
         @Override
         @SuppressFBWarnings(value = "CN_IDIOM_NO_SUPER_CALL", justification = "We do not expect anybody to use this class."
                 + "If they do, they must override clone() as well")
         public Object clone() {
-            return new VarPasswordPair(getVar(), new Secret(getPassword()));
+            return new VarPasswordPair(getVar(), getPassword());
         }
 
         @Override
