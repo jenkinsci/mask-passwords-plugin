@@ -240,21 +240,17 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         }
 
         public VarPasswordPair(String var, String password, boolean fastMethod) {
-            if (fastMethod) {
-                /**
-                 * Fast method is used when cloning to avoid the performance hit of throwing an exception when attempting to decrypt
-                 * an already decrypted string. This is a massive performance hit in some scenarios (e.g. build pipeline, parameterized
-                 * trigger
-                 */
-                this.var = var;
-                try {
-                    this.password = getSecretConstructor().newInstance(password);
-                } catch (Exception e) {
-                    // forget about it!
-                }
-            } else {
-                this.var = var;
-                this.password = Secret.fromString(password);
+            /**
+             * Fast method is used when cloning to avoid the performance hit of throwing an exception when attempting to decrypt
+             * an already decrypted string. This is a massive performance hit in some scenarios (e.g. build pipeline, parameterized
+             * trigger
+             */
+            this.var = var;
+            this.password = null;
+            try {
+                this.password = getSecretConstructor().newInstance(password);
+            } catch (Exception e) {
+                // forget about it!
             }
         }
 
