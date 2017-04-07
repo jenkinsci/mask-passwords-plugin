@@ -46,12 +46,6 @@ public class PasswordParameterDefinition extends ParameterDefinition {
         return value;
     }
 
-    public ParameterValue createValue(String password) {
-        PasswordParameterValue value = new PasswordParameterValue(getName(), password, getDescription());
-        value.setDescription(getDescription());
-        return value;
-    }
-
     @Override
     public ParameterValue createValue(StaplerRequest req) {
         String[] value = req.getParameterValues(getName());

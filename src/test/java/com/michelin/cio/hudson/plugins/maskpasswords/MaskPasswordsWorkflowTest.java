@@ -47,6 +47,7 @@ import org.jenkinsci.plugins.workflow.steps.StepConfigTester;
 import org.jenkinsci.plugins.workflow.test.steps.SemaphoreStep;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.runners.model.Statement;
@@ -63,6 +64,11 @@ public class MaskPasswordsWorkflowTest {
     @Rule
     public RestartableJenkinsRule story = new RestartableJenkinsRule();
 
+    @Before
+    public void dropCache() {
+        MaskPasswordsConfig.getInstance().reset();
+    }
+    
     @Test
     public void configRoundTrip() throws Exception {
         story.addStep(new Statement() {
@@ -188,44 +194,7 @@ public class MaskPasswordsWorkflowTest {
         });
     }
     
-    @Test
-    public void passwordParameterMask() throws Exception {
-        story.addStep(new Statement() {
-            String clearTextPassword = "myClearTextPassword";
-            String logWithClearTextPassword = "printed " + clearTextPassword + " oops";
-            String logWithHiddenPassword = "printed ******** oops";
-            
-            @Override
-            public void evaluate() throws Throwable {
-                FreeStyleProject project =
-                        story.j.jenkins.createProject(FreeStyleProject.class, "testPasswordParameter");
-                
-                PasswordParameterDefinition passwordParameterDefinition =
-                        new PasswordParameterDefinition("Password1", clearTextPassword, null);
-                ParametersDefinitionProperty parametersDefinitionProperty =
-                        new ParametersDefinitionProperty(passwordParameterDefinition);
-                project.addProperty(parametersDefinitionProperty);
-                
-                MaskPasswordsBuildWrapper maskPasswordsBuildWrapper =
-                        new MaskPasswordsBuildWrapper(Collections.<MaskPasswordsBuildWrapper.VarPasswordPair>emptyList());
-                project.getBuildWrappersList().add(maskPasswordsBuildWrapper);
-                
-                project.getBuildersList().add(new TestBuilder() {
-                    @Override
-                    public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
-                        listener.getLogger().println(logWithClearTextPassword);
-                        build.setResult(Result.SUCCESS);
-                        return true;
-                    }
-                });
-                
-                FreeStyleBuild build = project.scheduleBuild2(0, new Cause.UserIdCause()).get();
-                story.j.assertBuildStatusSuccess(story.j.waitForCompletion(build));
-                story.j.assertLogContains(logWithHiddenPassword, build);
-                story.j.assertLogNotContains(logWithClearTextPassword, build);
-            }
-        });
-    }
+
 
     // Copied from credentials-binding-plugin; perhaps belongs in JenkinsRule?
     private static Set<String> grep(File dir, String text) throws IOException {
