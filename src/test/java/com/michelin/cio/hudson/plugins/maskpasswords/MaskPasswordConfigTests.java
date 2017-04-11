@@ -28,6 +28,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 
 /**
@@ -37,16 +38,9 @@ import org.jvnet.hudson.test.JenkinsRule;
  */
 public class MaskPasswordConfigTests {
     
-    MaskPasswordsConfig config;
-    
     // The logic inside needs the classloader
     @Rule
     public JenkinsRule j = new JenkinsRule();
-    
-    @Before
-    public void initConfig() {
-        config = new MaskPasswordsConfig();
-    }
     
     @Test
     public void shouldConsiderAsMasked_cmchppPasswordParameterValue() {
@@ -69,12 +63,48 @@ public class MaskPasswordConfigTests {
         assertIsNotMasked(hudson.model.FileParameterValue.class);
     }
     
+    @Test
+    public void shouldReloadCorrectly_fromMissingFile() {
+        // Initialize caches
+        MaskPasswordsConfig instance = MaskPasswordsConfig.getInstance();
+        assertIsNotMasked(instance, hudson.model.StringParameterValue.class);
+        assertIsNotMasked(instance, hudson.model.FileParameterValue.class);
+        
+        MaskPasswordsConfig loaded = MaskPasswordsConfig.load();
+        assertIsNotMasked(loaded, hudson.model.StringParameterValue.class);
+        assertIsNotMasked(loaded, hudson.model.FileParameterValue.class);
+    }
+    
+    @Test
+    @Issue("JENKINS-43504")
+    public void shouldReloadCorrectly_fromFile() throws Exception {
+        // Initialize caches
+        MaskPasswordsConfig instance = MaskPasswordsConfig.getInstance();
+        assertIsNotMasked(instance, hudson.model.StringParameterValue.class);
+        assertIsNotMasked(instance, hudson.model.FileParameterValue.class);
+        MaskPasswordsConfig.save(instance);
+        
+        MaskPasswordsConfig loaded = MaskPasswordsConfig.load();
+        assertIsNotMasked(loaded, hudson.model.StringParameterValue.class);
+        assertIsNotMasked(loaded, hudson.model.FileParameterValue.class);
+    }
+    
     private void assertIsMasked(Class<?> clazz) {
+        MaskPasswordsConfig instance = MaskPasswordsConfig.getInstance();
+        assertIsMasked(instance, clazz);
+    }
+    
+    private void assertIsMasked(MaskPasswordsConfig config, Class<?> clazz) {
         config.invalidatePasswordValueClassCaches();
         assertTrue("Expected that the class is masked: " + clazz, config.guessIfShouldMask(clazz.getName()));
     }
     
     private void assertIsNotMasked(Class<?> clazz) {
+        MaskPasswordsConfig instance = MaskPasswordsConfig.getInstance();
+        assertIsNotMasked(instance, clazz);
+    }
+    
+    private void assertIsNotMasked(MaskPasswordsConfig config, Class<?> clazz) {
         config.invalidatePasswordValueClassCaches();
         assertFalse("Expected that the class is not masked: " + clazz, config.guessIfShouldMask(clazz.getName()));
     }
