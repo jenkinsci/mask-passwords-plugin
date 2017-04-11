@@ -27,6 +27,7 @@ package com.michelin.cio.hudson.plugins.maskpasswords;
 import com.google.common.annotations.VisibleForTesting;
 import com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper.VarPasswordPair;
 import com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper.VarMaskRegex;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.ExtensionList;
 import hudson.XmlFile;
 import hudson.cli.CLICommand;
@@ -81,14 +82,14 @@ public class MaskPasswordsConfig {
      */
     @Nonnull
     @GuardedBy("this")
-    private final transient Set<String> paramValueCache_maskedClasses = new HashSet<String>();
+    private transient Set<String> paramValueCache_maskedClasses = new HashSet<String>();
     
     /**
      * Cache of values, which are not subjects for masking. 
      */
     @Nonnull
     @GuardedBy("this")
-    private final transient Set<String> paramValueCache_nonMaskedClasses = new HashSet<String>();
+    private transient Set<String> paramValueCache_nonMaskedClasses = new HashSet<String>();
     
     /**
      * Users can define name/password pairs at the global level to share common
@@ -119,6 +120,21 @@ public class MaskPasswordsConfig {
     public MaskPasswordsConfig() {
         maskPasswordsParamDefClasses = new LinkedHashSet<String>();
         reset();
+    }
+    
+    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE", justification = "readResolve()")
+    private Object readResolve() {
+        // Reinit caches
+        synchronized(this) {
+            if (paramValueCache_maskedClasses == null) {
+                paramValueCache_maskedClasses = new HashSet<String>();
+            }
+            if (paramValueCache_nonMaskedClasses == null) {
+                paramValueCache_nonMaskedClasses = new HashSet<String>();
+            }
+        }
+       
+     return this;
     }
 
     /**
