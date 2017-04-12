@@ -48,6 +48,7 @@ import hudson.util.Secret;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -238,11 +239,27 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
             this.password = Secret.fromString(password);
         }
 
+        public VarPasswordPair(String var, String password, boolean fastMethod) {
+            /**
+             * Fast method is used when cloning to avoid the performance hit of throwing an exception when attempting to decrypt
+             * an already decrypted string. This is a massive performance hit in some scenarios (e.g. build pipeline, parameterized
+             * trigger
+             */
+            this.var = var;
+            Secret t = null;
+            try {
+                t = getSecretConstructor().newInstance(password);
+            } catch (Exception e) {
+                t = Secret.fromString(password);
+            }
+            this.password = t;
+        }
+
         @Override
         @SuppressFBWarnings(value = "CN_IDIOM_NO_SUPER_CALL", justification = "We do not expect anybody to use this class."
                 + "If they do, they must override clone() as well")
         public Object clone() {
-            return new VarPasswordPair(getVar(), getPassword());
+            return new VarPasswordPair(getVar(), getPassword(), true);
         }
 
         @Override
@@ -278,7 +295,18 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
             hash = 67 * hash + (this.var != null ? this.var.hashCode() : 0);
             return hash;
         }
-
+        
+        public static synchronized Constructor<Secret> getSecretConstructor() throws NoSuchMethodException {
+            if (SECRET_CONSTRUCTOR==null) {
+                    Constructor<Secret> t = Secret.class.getDeclaredConstructor(String.class);
+                    t.setAccessible(true);
+                    SECRET_CONSTRUCTOR = t;
+            }
+            return SECRET_CONSTRUCTOR;
+        }
+        
+        private static final Object lock = new Object();
+        private static Constructor<Secret> SECRET_CONSTRUCTOR;
     }
 
     /**
