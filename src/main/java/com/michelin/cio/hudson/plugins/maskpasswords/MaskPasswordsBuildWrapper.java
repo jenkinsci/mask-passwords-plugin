@@ -235,7 +235,8 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         @DataBoundConstructor
         public VarPasswordPair(String var, String password) {
             this.var = var;
-            this.password = Secret.fromString(password);
+            // Adding MAGIC on the end prevents an attempted decrypt and the associated exception overhead
+            this.password = Secret.fromString(password + Secret.MAGIC);
         }
 
         @Override
