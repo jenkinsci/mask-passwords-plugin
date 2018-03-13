@@ -16,6 +16,6 @@ The primary location for the source code of this plugin is on [Jenkins' SVN repo
 
 [0]: https://github.com/jenkinsci/mask-passwords-plugin/raw/master/LICENSE.txt
 [1]: https://jenkins.io/
-[2]: http://wiki.jenkins-ci.org/display/JENKINS/Mask+Passwords+Plugin
+[2]: https://wiki.jenkins.io/display/JENKINS/Mask+Passwords+Plugin
 [3]: https://svn.jenkins-ci.org/trunk/hudson/plugins/mask-passwords/
 [4]: https://github.com/jenkinsci/mask-passwords-plugin
