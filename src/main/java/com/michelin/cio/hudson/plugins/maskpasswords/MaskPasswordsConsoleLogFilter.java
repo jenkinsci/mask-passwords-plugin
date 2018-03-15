@@ -30,6 +30,7 @@ import hudson.model.Run;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -42,7 +43,9 @@ import java.util.logging.Logger;
  * @author Jason Antman jason@jasonantman.com
  */
 @Extension
-public class MaskPasswordsConsoleLogFilter extends ConsoleLogFilter {
+public class MaskPasswordsConsoleLogFilter extends ConsoleLogFilter  implements Serializable {
+
+  private static final long serialVersionUID = 1L;
 
   public MaskPasswordsConsoleLogFilter() {
     // nothing to do here; this object lives for the lifetime of Jenkins,
