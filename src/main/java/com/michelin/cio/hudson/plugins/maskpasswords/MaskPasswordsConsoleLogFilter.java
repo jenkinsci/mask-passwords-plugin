@@ -24,43 +24,17 @@
 
 package com.michelin.cio.hudson.plugins.maskpasswords;
 
-import com.thoughtworks.xstream.converters.Converter;
-import com.thoughtworks.xstream.converters.MarshallingContext;
-import com.thoughtworks.xstream.converters.UnmarshallingContext;
-import com.thoughtworks.xstream.io.HierarchicalStreamReader;
-import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
-import hudson.EnvVars;
 import hudson.Extension;
-import hudson.FilePath;
-import hudson.Launcher;
 import hudson.console.ConsoleLogFilter;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.ParameterValue;
-import hudson.model.ParametersAction;
 import hudson.model.Run;
-import hudson.model.TaskListener;
-import hudson.tasks.BuildWrapperDescriptor;
-import hudson.util.Secret;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jenkins.tasks.SimpleBuildWrapper;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-import org.apache.commons.lang.StringUtils;
-import org.jvnet.localizer.Localizable;
-import org.jvnet.localizer.ResourceBundleHolder;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.StaplerRequest;
 
 /**
  * GLOBAL Console Log Filter that alters the console so that passwords don't
@@ -69,7 +43,9 @@ import org.kohsuke.stapler.StaplerRequest;
  * @author Jason Antman jason@jasonantman.com
  */
 @Extension
-public class MaskPasswordsConsoleLogFilter extends ConsoleLogFilter {
+public class MaskPasswordsConsoleLogFilter extends ConsoleLogFilter  implements Serializable {
+
+  private static final long serialVersionUID = 1L;
 
   public MaskPasswordsConsoleLogFilter() {
     // nothing to do here; this object lives for the lifetime of Jenkins,
@@ -79,7 +55,7 @@ public class MaskPasswordsConsoleLogFilter extends ConsoleLogFilter {
 
   @SuppressWarnings("rawtypes")
   @Override
-  public OutputStream decorateLogger(AbstractBuild _ignore, OutputStream logger) throws IOException, InterruptedException {
+  public OutputStream decorateLogger(Run _ignore, OutputStream logger) throws IOException, InterruptedException {
       // check the config
       MaskPasswordsConfig config = MaskPasswordsConfig.getInstance();
       if(! config.isEnabledGlobally()) {
