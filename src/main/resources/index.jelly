@@ -25,4 +25,5 @@
 <?jelly escape-by-default='true'?>
 <div>
     This plugin allows masking passwords that may appear in the console.
+    The plugin also provides a non-stored password parameter.
 </div>

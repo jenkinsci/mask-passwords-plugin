@@ -6,4 +6,5 @@ work
 .classpath
 .project
 
+# Intellij project files
 .idea
