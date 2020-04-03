@@ -1,0 +1,2 @@
+_extends: .github
+tag-template: mask-passwords-$NEXT_MINOR_VERSION
