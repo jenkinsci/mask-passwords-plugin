@@ -10,7 +10,7 @@
   <artifactId>mask-passwords</artifactId>
   <packaging>hpi</packaging>
   <name>Mask Passwords Plugin</name>
-  <description>Masks passwords that may appear in the console</description>
+  <description>Masks passwords that may appear in the console. Provides non-stored password parameter.</description>
   <url>https://github.com/jenkinsci/mask-passwords-plugin</url>
   <version>2.12.1-SNAPSHOT</version>
 

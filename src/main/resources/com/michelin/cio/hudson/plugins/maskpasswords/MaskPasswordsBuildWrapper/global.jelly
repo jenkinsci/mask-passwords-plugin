@@ -51,7 +51,7 @@
                         </td>
                         <td width="10%" align="right">${%Password}</td>
                         <td width="30%">
-                            <f:password name="globalVarPasswordPair.password" value="${!empty globalVarPasswordPair.password?globalVarPasswordPair.password:''}"/>
+                            <f:password name="globalVarPasswordPair.password" value="${!empty globalVarPasswordPair.passwordAsSecret?globalVarPasswordPair.passwordAsSecret.encryptedValue:''}"/>
                         </td>
                         <td width="20%" align="right"><f:repeatableDeleteButton/></td>
                     </tr>
