@@ -12,7 +12,7 @@
   <name>Mask Passwords Plugin</name>
   <description>Masks passwords that may appear in the console. Provides non-stored password parameter.</description>
   <url>https://github.com/jenkinsci/mask-passwords-plugin</url>
-  <version>2.12.1-SNAPSHOT</version>
+  <version>2.13</version>
 
   <properties>
     <jenkins.version>1.642.4</jenkins.version>
@@ -24,7 +24,7 @@
     <connection>scm:git:git://github.com/jenkinsci/mask-passwords-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/mask-passwords-plugin.git</developerConnection>
     <url>http://github.com/jenkinsci/mask-passwords-plugin</url>
-    <tag>HEAD</tag>
+    <tag>mask-passwords-2.13</tag>
   </scm>
 
     <licenses>
