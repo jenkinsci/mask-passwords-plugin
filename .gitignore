@@ -5,3 +5,6 @@ work
 .settings
 .classpath
 .project
+
+# Intellij project files
+.idea

@@ -27,6 +27,6 @@
         xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form"
         xmlns:i="jelly:fmt" xmlns:p="/lib/hudson/project">
     <f:entry title="${it.name}" description="${it.description}">
-        <f:textbox name="value" value="${%You really think you can access this value?}" readonly="true"/>
+        <f:textbox name="value" value="${%non-stored password parameter}" readonly="true"/>
     </f:entry>
 </j:jelly>
