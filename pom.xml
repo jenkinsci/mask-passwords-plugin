@@ -11,7 +11,7 @@
   <packaging>hpi</packaging>
   <name>Mask Passwords Plugin</name>
   <description>Masks passwords that may appear in the console</description>
-  <url>https://wiki.jenkins.io/display/JENKINS/Mask+Passwords+Plugin</url>
+  <url>https://github.com/jenkinsci/mask-passwords-plugin</url>
   <version>2.12.1-SNAPSHOT</version>
 
   <properties>
