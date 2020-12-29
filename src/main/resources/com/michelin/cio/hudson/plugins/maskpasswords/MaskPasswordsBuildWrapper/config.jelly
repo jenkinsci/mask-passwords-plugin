@@ -24,54 +24,26 @@
   -->
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-    <tr>
-        <td/>
-        <td colspan="2">
-            <div class="help" style="display:block;background-color:#F7F1DA;">
-                ${%HowToConfigureThisPlugin}
-            </div>
-        </td>
-        <td/>
-    </tr>
-    <tr>
-        <td/>
-        <td colspan="2">${%PasswordPairTitle}</td>
-        <td/>
-    </tr>
-    <f:entry field="varPasswordPairs">
-        <f:repeatable name="varPasswordPairs" items="${instance.varPasswordPairs}" var="varPasswordPair">
-            <table width="100%">
-                <tr>
-                    <td width="10%" align="right">${%Name}</td>
-                    <td width="30%">
-                        <f:textbox name="varPasswordPair.var" value="${!empty varPasswordPair.var?varPasswordPair.var:''}"/>
-                    </td>
-                    <td width="10%" align="right">${%Password}</td>
-                    <td width="30%">
-                        <f:password name="varPasswordPair.password" value="${varPasswordPair.passwordAsSecret}"/>
-                    </td>
-                    <td width="20%" align="right"><f:repeatableDeleteButton/></td>
-                </tr>
-            </table>
+    <div class="help" style="display:block;background-color:#F7F1DA;">
+        ${%HowToConfigureThisPlugin}
+    </div>
+    <f:entry title="${%PasswordPairTitle}">
+        <f:repeatable field="varPasswordPairs">
+            <f:entry title="${%Name}" field="var">
+                <f:textbox />
+            </f:entry>
+            <f:entry title="${%Password}" field="password">
+                <f:password />
+            </f:entry>
+            <div align="right"><f:repeatableDeleteButton/></div>
         </f:repeatable>
     </f:entry>
-    <!-- regexes -->
-    <tr>
-        <td/>
-        <td colspan="2">${%RegexTitle}</td>
-        <td/>
-    </tr>
-    <f:entry field="varMaskRegexes">
-        <f:repeatable name="varMaskRegexes" items="${instance.varMaskRegexes}" var="varMaskRegex">
-            <table width="100%">
-                <tr>
-                    <td width="10%" align="right">${%Regex}</td>
-                    <td width="70%">
-                        <f:textbox name="varMaskRegex.regex" value="${!empty varMaskRegex.regex?varMaskRegex.regex:''}"/>
-                    </td>
-                    <td width="20%" align="right"><f:repeatableDeleteButton/></td>
-                </tr>
-            </table>
+    <f:entry title="${%RegexTitle}">
+        <f:repeatable field="varMaskRegexes">
+            <f:entry title="${%Regex}" field="regex">
+                <f:textbox />
+            </f:entry>
+            <div align="right"><f:repeatableDeleteButton/></div>
         </f:repeatable>
     </f:entry>
 </j:jelly>

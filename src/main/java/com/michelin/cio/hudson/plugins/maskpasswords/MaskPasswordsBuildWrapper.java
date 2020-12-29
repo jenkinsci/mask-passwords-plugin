@@ -37,7 +37,9 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.console.ConsoleLogFilter;
 import hudson.model.AbstractBuild;
+import hudson.model.AbstractDescribableImpl;
 import hudson.model.AbstractProject;
+import hudson.model.Descriptor;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.Run;
@@ -49,20 +51,26 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+
 import jenkins.tasks.SimpleBuildWrapper;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.Symbol;
+import org.jenkinsci.plugins.structs.describable.CustomDescribableModel;
+import org.jenkinsci.plugins.structs.describable.UninstantiatedDescribable;
 import org.jvnet.localizer.Localizable;
 import org.jvnet.localizer.ResourceBundleHolder;
-import org.kohsuke.accmod.Restricted;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
@@ -96,7 +104,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         // global passwords
         List<VarPasswordPair> globalVarPasswordPairs = config.getGlobalVarPasswordPairs();
         for(VarPasswordPair globalVarPasswordPair: globalVarPasswordPairs) {
-            allPasswords.add(globalVarPasswordPair.getPassword());
+            allPasswords.add(globalVarPasswordPair.getPlainTextPassword());
         }
 
         // global regexes
@@ -108,7 +116,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         // job's passwords
         if(varPasswordPairs != null) {
             for(VarPasswordPair varPasswordPair: varPasswordPairs) {
-                String password = varPasswordPair.getPassword();
+                String password = varPasswordPair.getPlainTextPassword();
                 if(StringUtils.isNotBlank(password)) {
                     allPasswords.add(password);
                 }
@@ -141,6 +149,11 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         }
 
         return new FilterImpl(allPasswords, allRegexes);
+    }
+
+    @Override
+    public boolean requiresWorkspace() {
+        return false;
     }
 
     private static final class FilterImpl extends ConsoleLogFilter implements Serializable {
@@ -188,7 +201,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         List<VarPasswordPair> globalVarPasswordPairs = config.getGlobalVarPasswordPairs();
         // we can't use variables.putAll() since passwords are ciphered when in varPasswordPairs
         for(VarPasswordPair globalVarPasswordPair: globalVarPasswordPairs) {
-            variables.put(globalVarPasswordPair.getVar(), globalVarPasswordPair.getPassword());
+            variables.put(globalVarPasswordPair.getVar(), globalVarPasswordPair.getPlainTextPassword());
         }
 
         // job's var/password pairs
@@ -196,7 +209,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
             // cf. comment above
             for(VarPasswordPair varPasswordPair: varPasswordPairs) {
                 if(StringUtils.isNotBlank(varPasswordPair.getVar())) {
-                    variables.put(varPasswordPair.getVar(), varPasswordPair.getPassword());
+                    variables.put(varPasswordPair.getVar(), varPasswordPair.getPlainTextPassword());
                 }
             }
         }
@@ -210,7 +223,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
     }
 
     @Override
-    public void setUp(Context context, Run<?, ?> build, FilePath workspace, Launcher launcher, TaskListener listener, EnvVars initialEnvironment) throws IOException, InterruptedException {
+    public void setUp(Context context, Run<?, ?> build, TaskListener listener, EnvVars initialEnvironment) throws IOException, InterruptedException {
         // nothing to do here
     }
 
@@ -227,22 +240,22 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
      * Equality and hashcode are based on {@code var} only, not {@code password}.
      * If the class gets extended, a <code>clone()</code> method must be implemented without <code>super.clone()</code> calls.
      */
-    public static class VarPasswordPair implements Cloneable {
+    public static class VarPasswordPair extends AbstractDescribableImpl<VarPasswordPair> implements Cloneable {
 
         private final String var;
         private final Secret password;
 
         @DataBoundConstructor
-        public VarPasswordPair(String var, String password) {
+        public VarPasswordPair(String var, Secret password) {
             this.var = var;
-            this.password = Secret.fromString(password);
+            this.password = password;
         }
 
         @Override
         @SuppressFBWarnings(value = "CN_IDIOM_NO_SUPER_CALL", justification = "We do not expect anybody to use this class."
                 + "If they do, they must override clone() as well")
         public Object clone() {
-            return new VarPasswordPair(getVar(), getPassword());
+            return new VarPasswordPair(getVar(), password);
         }
 
         @Override
@@ -254,22 +267,23 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
                 return false;
             }
             final VarPasswordPair other = (VarPasswordPair) obj;
-            if((this.var == null) ? (other.var != null) : !this.var.equals(other.var)) {
-                return false;
-            }
-            return true;
+            return Objects.equals(this.var, other.var);
         }
 
         public String getVar() {
             return var;
         }
 
-        public String getPassword() {
-            return Secret.toString(password);
+        public Secret getPassword() {
+            return password;
         }
 
-        public Secret getPasswordAsSecret() {
-            return password;
+        public String getPlainTextPassword() {
+            if (password == null || StringUtils.isBlank(password.getPlainText())) {
+                return null;
+            }
+
+            return password.getPlainText();
         }
 
         @Override
@@ -279,13 +293,39 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
             return hash;
         }
 
+        @Extension
+        public static class DescriptorImpl extends Descriptor<VarPasswordPair> implements CustomDescribableModel {
+            @Nonnull
+            @Override
+            public UninstantiatedDescribable customUninstantiate(@Nonnull UninstantiatedDescribable step) {
+                Map<String, ?> arguments = step.getArguments();
+                Map<String, Object> newMap1 = new HashMap<>();
+                newMap1.put("var", arguments.get("var"));
+                newMap1.put("password", ((Secret) arguments.get("password")).getPlainText());
+                return step.withArguments(newMap1);
+            }
+
+            @Nonnull
+            @Override
+            public Map<String, Object> customInstantiate(@Nonnull Map<String, Object> arguments) {
+                Map<String, Object> newMap = new HashMap<>();
+                newMap.put("var", arguments.get("var"));
+                Object password = arguments.get("password");
+                if (password instanceof String) {
+                    password = Secret.fromString((String) password);
+                }
+                newMap.put("password", password);
+                return newMap;
+            }
+        }
+
     }
 
     /**
      * Represents regexes defined by users in their jobs.
      * If the class gets extended, a <code>clone()</code> method must be implemented without <code>super.clone()</code> calls.
      */
-    public static class VarMaskRegex implements Cloneable {
+    public static class VarMaskRegex extends AbstractDescribableImpl<VarMaskRegex> implements Cloneable {
 
         private final String regex;
 
@@ -310,10 +350,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
                 return false;
             }
             final VarMaskRegex other = (VarMaskRegex) obj;
-            if((this.regex == null) ? (other.regex != null) : !this.regex.equals(other.regex)) {
-                return false;
-            }
-            return true;
+            return Objects.equals(this.regex, other.regex);
         }
 
         @CheckForNull
@@ -328,9 +365,13 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
             return hash;
         }
 
+        @Extension
+        public static class DescriptorImpl extends Descriptor<VarMaskRegex> {}
+
     }
 
-    @Extension(ordinal = 1000) // JENKINS-12161
+    @Symbol("maskPasswords")
+    @Extension(ordinal = 100) // JENKINS-12161, was previously 1000 but that made the system configuration page look weird
     public static final class DescriptorImpl extends BuildWrapperDescriptor {
 
         public DescriptorImpl() {
@@ -366,14 +407,14 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
                         for(int i = 0; i < jsonArray.size(); i++) {
                             getConfig().addGlobalVarPasswordPair(new VarPasswordPair(
                                     jsonArray.getJSONObject(i).getString("var"),
-                                    jsonArray.getJSONObject(i).getString("password")));
+                                    Secret.fromString(jsonArray.getJSONObject(i).getString("password"))));
                         }
                     }
                     else if(o instanceof JSONObject) {
                         JSONObject jsonObject = submittedForm.getJSONObject("globalVarPasswordPairs");
                         getConfig().addGlobalVarPasswordPair(new VarPasswordPair(
                                 jsonObject.getString("var"),
-                                jsonObject.getString("password")));
+                                Secret.fromString(jsonObject.getString("password"))));
                     }
                 }
 
@@ -411,6 +452,14 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
                 LOGGER.log(Level.SEVERE, "Failed to save Mask Passwords plugin configuration", e);
                 return false;
             }
+        }
+
+        public List<VarPasswordPair> getGlobalVarPasswordPairs() {
+            return getConfig().getGlobalVarPasswordPairs();
+        }
+
+        public List<VarMaskRegex> getGlobalVarMaskRegexes() {
+            return getConfig().getGlobalVarMaskRegexes();
         }
 
         /**
@@ -459,12 +508,12 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
                 writer.startNode(VAR_PASSWORD_PAIRS_NODE);
                 for(VarPasswordPair varPasswordPair: maskPasswordsBuildWrapper.getVarPasswordPairs()) {
                     // blank passwords are skipped
-                    if(StringUtils.isBlank(varPasswordPair.getPassword())) {
+                    if(varPasswordPair.getPlainTextPassword() == null) {
                         continue;
                     }
                     writer.startNode(VAR_PASSWORD_PAIR_NODE);
                     writer.addAttribute(VAR_ATT, varPasswordPair.getVar());
-                    writer.addAttribute(PASSWORD_ATT, varPasswordPair.getPasswordAsSecret().getEncryptedValue());
+                    writer.addAttribute(PASSWORD_ATT, varPasswordPair.getPassword().getEncryptedValue());
                     writer.endNode();
                 }
                 writer.endNode();
@@ -497,7 +546,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
                         if(reader.getNodeName().equals(VAR_PASSWORD_PAIR_NODE)) {
                             varPasswordPairs.add(new VarPasswordPair(
                                     reader.getAttribute(VAR_ATT),
-                                    reader.getAttribute(PASSWORD_ATT)));
+                                    Secret.fromString(reader.getAttribute(PASSWORD_ATT))));
                         }
                         else {
                             LOGGER.log(Level.WARNING,

@@ -24,55 +24,37 @@
   -->
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-    <!-- global enable -->
-    <f:section title="${%EnabledGlobally}">
-      <f:entry title="${%Enable Mask Passwords for ALL BUILDS}" description="${%High possibility of breaking things; use this only as a last resort. Read help before enabling!}" field="globalVarMaskEnabledGlobally">
-          <f:checkbox checked="${descriptor.config.isEnabledGlobally()}" />
-      </f:entry>
-    </f:section>
     <!-- parameter definitions to be automatically masked -->
-    <f:section title="${%ParameterDefinitions}">
+    <f:section title="${%Mask Passwords}">
+        <f:entry title="${%Enable Mask Passwords for ALL BUILDS}" description="${%High possibility of breaking things; use this only as a last resort. Read help before enabling!}" field="globalVarMaskEnabledGlobally">
+            <f:checkbox checked="${descriptor.config.isEnabledGlobally()}" />
+        </f:entry>
+        <!-- global var/password pairs -->
+        <f:entry title="${%GlobalVarPasswordPairs}">
+            <f:repeatable field="globalVarPasswordPairs">
+                <f:entry title="${%Name}" field="var">
+                    <f:textbox />
+                </f:entry>
+                <f:entry title="${%Password}" field="password">
+                    <f:password />
+                </f:entry>
+                <div align="right"><f:repeatableDeleteButton/></div>
+            </f:repeatable>
+        </f:entry>
+        <!-- global regexes -->
+        <f:entry title="${%GlobalVarMaskRegexes}">
+            <f:repeatable field="globalVarMaskRegexes">
+                <f:entry title="${%Regex}" field="regex">
+                    <f:textbox />
+                </f:entry>
+                <div align="right"><f:repeatableDeleteButton/></div>
+            </f:repeatable>
+        </f:entry>
         <j:forEach var="paramDef" items="${descriptor.config.parameterDefinitions}">
             <f:entry title="${paramDef.value}">
                 <input type="hidden" name="maskedParamDefs" value="${paramDef.key}"/>
                 <f:checkbox name="selectedMaskedParamDefs" checked="${descriptor.config.isSelected(paramDef.key)}"/>
             </f:entry>
         </j:forEach>
-    </f:section>
-    <!-- global var/password pairs -->
-    <f:section title="${%GlobalVarPasswordPairs}">
-        <f:entry field="globalVarPasswordPairs">
-            <f:repeatable name="globalVarPasswordPairs" items="${descriptor.config.globalVarPasswordPairs}" var="globalVarPasswordPair">
-                <table width="100%">
-                    <tr>
-                        <td width="10%" align="right">${%Name}</td>
-                        <td width="30%">
-                            <f:textbox name="globalVarPasswordPair.var" value="${!empty globalVarPasswordPair.var?globalVarPasswordPair.var:''}"/>
-                        </td>
-                        <td width="10%" align="right">${%Password}</td>
-                        <td width="30%">
-                            <f:password name="globalVarPasswordPair.password" value="${!empty globalVarPasswordPair.passwordAsSecret?globalVarPasswordPair.passwordAsSecret.encryptedValue:''}"/>
-                        </td>
-                        <td width="20%" align="right"><f:repeatableDeleteButton/></td>
-                    </tr>
-                </table>
-            </f:repeatable>
-        </f:entry>
-    </f:section>
-    <!-- global regexes -->
-    <f:section title="${%GlobalVarMaskRegexes}">
-        <f:entry field="globalVarMaskRegexes">
-            <f:repeatable name="globalVarMaskRegexes" items="${descriptor.config.globalVarMaskRegexes}" var="globalVarMaskRegex">
-                <table width="100%">
-                    <tr>
-                        <td width="10%" align="right">${%Regex}</td>
-                        <td width="70%">
-                            <f:textbox name="globalVarMaskRegex.regex" value="${!empty globalVarMaskRegex.regex?globalVarMaskRegex.regex:''}"/>
-                        </td>
-                        <td width="20%" align="right"><f:repeatableDeleteButton/></td>
-                    </tr>
-                </table>
-            </f:repeatable>
-        </f:entry>
     </f:section>
 </j:jelly>

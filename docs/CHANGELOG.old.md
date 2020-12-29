@@ -134,7 +134,7 @@ Release Date: (10/20/2011)
 -   Implemented
     [JENKINS-11399](https://issues.jenkins-ci.org/browse/JENKINS-11399):
     It is now possible to define name/password pairs in Jenkins' main
-    configuration screen (**Manage Hudson** \> **Configure System**)
+    configuration screen (**Manage Jenkins** \> **Configure System**)
 
 ## Version 2.6.1
 
@@ -156,7 +156,7 @@ Release Date: (04/29/2011)
 
 Release Date: (03/11/2011)
 
--   New configuration screen (in **Manage Hudson** \> **Configure
+-   New configuration screen (in **Manage Jenkins** \> **Configure
     System**) allowing to select which build parameters have to be
     masked (**Password Parameter** are selected by default)
 -   Fixed a bug which was preventing to mask passwords containing
