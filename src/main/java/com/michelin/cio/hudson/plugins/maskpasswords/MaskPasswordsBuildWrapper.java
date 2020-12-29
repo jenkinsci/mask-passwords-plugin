@@ -294,6 +294,10 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         }
 
         @Extension
+        /**
+         * {@link CustomDescribableModel} is needed because pipeline doesn't natively support the {@link Secret} class
+         * but we need Secret so that data-binding works correctly.
+         */
         public static class DescriptorImpl extends Descriptor<VarPasswordPair> implements CustomDescribableModel {
             @Nonnull
             @Override
