@@ -71,7 +71,7 @@ public class MaskPasswordsConsoleLogFilter extends ConsoleLogFilter  implements 
       // global passwords
       List<MaskPasswordsBuildWrapper.VarPasswordPair> globalVarPasswordPairs = config.getGlobalVarPasswordPairs();
       for(MaskPasswordsBuildWrapper.VarPasswordPair globalVarPasswordPair: globalVarPasswordPairs) {
-          passwords.add(globalVarPasswordPair.getPassword());
+          passwords.add(globalVarPasswordPair.getPlainTextPassword());
       }
 
       // global regexes

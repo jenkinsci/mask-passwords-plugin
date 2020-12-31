@@ -147,7 +147,7 @@ public class MaskPasswordsConfig {
      */
     public void addGlobalVarPasswordPair(VarPasswordPair varPasswordPair) {
         // blank values are forbidden
-        if(StringUtils.isBlank(varPasswordPair.getVar()) || StringUtils.isBlank(varPasswordPair.getPassword())) {
+        if(StringUtils.isBlank(varPasswordPair.getVar()) || varPasswordPair.getPlainTextPassword() == null) {
             LOGGER.fine("addGlobalVarPasswordPair NOT adding pair with null var or password");
             return;
         }
@@ -225,7 +225,7 @@ public class MaskPasswordsConfig {
     }
 
     private static XmlFile getConfigFile() {
-        return new XmlFile(new File(Jenkins.getActiveInstance().getRootDir(), CONFIG_FILE));
+        return new XmlFile(new File(Jenkins.get().getRootDir(), CONFIG_FILE));
     }
 
     /**

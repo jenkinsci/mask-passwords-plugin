@@ -36,7 +36,7 @@ this:
 
 When activating the **Mask passwords** option in a job, the builds'
 **Password Parameters** (or any other type of build parameters selected
-for masking in **Manage Hudson** \> **Configure System**) are
+for masking in **Manage Jenkins** \> **Configure System**) are
 automatically masked from the console. Furthermore, you can also safely
 define a list of static passwords to be masked (you can also define a
 list of static password shared by all jobs in Jenkins' main
@@ -53,7 +53,7 @@ output:
 
 # User guide
 
-First, go to Jenkins' main configuration screen (**Manage Hudson** \>
+First, go to Jenkins' main configuration screen (**Manage Jenkins** \>
 **Configure System**) and select, in the **Mask Passwords -
 Configuration** section, which kind of build parameters have to be
 automatically masked from the console output:
