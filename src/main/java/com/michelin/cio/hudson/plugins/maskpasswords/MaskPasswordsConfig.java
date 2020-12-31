@@ -38,6 +38,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -479,7 +480,7 @@ public class MaskPasswordsConfig {
         try {
             return (MaskPasswordsConfig) getConfigFile().read();
         }
-        catch(FileNotFoundException e) {
+        catch(FileNotFoundException | NoSuchFileException e) {
             LOGGER.log(Level.WARNING, "No configuration found for Mask Passwords plugin");
         }
         catch(Exception e) {
