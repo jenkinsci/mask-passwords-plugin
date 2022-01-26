@@ -25,15 +25,31 @@
 package com.michelin.cio.hudson.plugins.maskpasswords;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper.VarPasswordPair;
 import com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper.VarMaskRegex;
+import com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper.VarPasswordPair;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import hudson.Extension;
 import hudson.ExtensionList;
 import hudson.XmlFile;
 import hudson.cli.CLICommand;
+import hudson.model.AbstractDescribableImpl;
+import hudson.model.Descriptor;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterDefinition.ParameterDescriptor;
 import hudson.model.ParameterValue;
+import jenkins.model.Jenkins;
+import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.plugins.structs.describable.CustomDescribableModel;
+import org.jenkinsci.plugins.structs.describable.UninstantiatedDescribable;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.StaplerRequest;
+
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+import javax.annotation.concurrent.GuardedBy;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -48,15 +64,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
-import javax.annotation.concurrent.GuardedBy;
-import jenkins.model.Jenkins;
-import net.sf.json.JSONObject;
-import org.apache.commons.lang.StringUtils;
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.NoExternalUse;
-import org.kohsuke.stapler.StaplerRequest;
 
 /**
  * Singleton class to manage Mask Passwords global settings.
@@ -93,7 +100,7 @@ public class MaskPasswordsConfig {
     private transient Set<String> paramValueCache_nonMaskedClasses = new HashSet<String>();
     
     /**
-     * Users can define name/password pairs at the global level to share common
+     * Users can define key/password pairs at the global level to share common
      * passwords with several jobs.
      *
      * <p>Never ever use this attribute directly: Use {@link #getGlobalVarPasswordPairsList} to avoid
@@ -109,8 +116,13 @@ public class MaskPasswordsConfig {
      * potential NPEs.</p>
      *
      * @since 2.9
+     *
+     * Deprecated in favor of globalVarMaskRegexesMap which has label names mapped to value's for better identification
      */
-    private List<VarMaskRegex> globalVarMaskRegexes;
+    @Deprecated
+    public List<VarMaskRegex> globalVarMaskRegexes;
+    public List<VarMaskRegexEntry> globalVarMaskRegexesU;
+    public HashMap<String, VarMaskRegex> globalVarMaskRegexesMap;
     /**
      * Whether or not to enable the plugin globally on ALL BUILDS.
      *
@@ -139,9 +151,9 @@ public class MaskPasswordsConfig {
     }
 
     /**
-     * Adds a name/password pair at the global level.
+     * Adds a key/password pair at the global level.
      *
-     * <p>If either name or password is blank (as defined per the Commons Lang
+     * <p>If either key or password is blank (as defined per the Commons Lang
      * library), then the pair is not added.</p>
      *
      * @since 2.7
@@ -156,24 +168,38 @@ public class MaskPasswordsConfig {
     }
 
     /**
-     * Adds a regex at the global level.
+     * Adds a value at the global level.
      *
-     * <p>If regex is blank (as defined per the Commons Lang
+     * <p>If value is blank (as defined per the Commons Lang
      * library), then the pair is not added.</p>
      *
      * @since 2.9
      */
     public void addGlobalVarMaskRegex(VarMaskRegex varMaskRegex) {
+        addGlobalVarMaskRegex("", varMaskRegex);
+    }
+
+    public void addGlobalVarMaskRegex(String name, VarMaskRegex varMaskRegex) {
         // blank values are forbidden
         if(StringUtils.isBlank(varMaskRegex.getRegex())) {
-            LOGGER.fine("addGlobalVarMaskRegex NOT adding null regex");
+            LOGGER.fine("addGlobalVarMaskRegex NOT adding null value");
             return;
         }
-        getGlobalVarMaskRegexesList().add(varMaskRegex);
+        // blank values are forbidden, will give default numbered key name
+        if(StringUtils.isBlank(name)) {
+            LOGGER.fine("Generating default numbered key for VarMaskRegex");
+            name = "VarMaskRegex" + getGlobalVarMaskRegexesMap().size();
+        }
+        HashMap<String, VarMaskRegex> regexMap = getGlobalVarMaskRegexesMap();
+        regexMap.put(name, varMaskRegex);
+        getGlobalVarMaskRegexesUList().clear();
+        for (Map.Entry<String, VarMaskRegex> entry: getGlobalVarMaskRegexesMap().entrySet()) {
+            getGlobalVarMaskRegexesUList().add(new VarMaskRegexEntry(entry.getKey(), entry.getValue()));
+        }
     }
 
     /**
-     * @param className The class name of a {@link ParameterDescriptor} to be added
+     * @param className The class key of a {@link ParameterDescriptor} to be added
      *                  to the list of parameters which will prevent the rebuild
      *                  action to be enabled for a build
      */
@@ -205,6 +231,7 @@ public class MaskPasswordsConfig {
         maskPasswordsParamDefClasses.clear();
         getGlobalVarPasswordPairsList().clear();
         getGlobalVarMaskRegexesList().clear();
+        getGlobalVarMaskRegexesMap().clear();
         globalVarEnableGlobally = false;
         
         // Drop caches
@@ -230,7 +257,7 @@ public class MaskPasswordsConfig {
     }
 
     /**
-     * Returns the list of name/password pairs defined at the global level.
+     * Returns the list of key/password pairs defined at the global level.
      *
      * <p>Modifications broughts to the returned list has no impact on this
      * configuration (the returned value is a copy). Also, the list can be
@@ -245,7 +272,6 @@ public class MaskPasswordsConfig {
         for(VarPasswordPair varPasswordPair: getGlobalVarPasswordPairsList()) {
             r.add((VarPasswordPair) varPasswordPair.clone());
         }
-
         return r;
     }
 
@@ -258,16 +284,20 @@ public class MaskPasswordsConfig {
      *
      * @since 2.9
      */
-    public List<VarMaskRegex> getGlobalVarMaskRegexes() {
-        List<VarMaskRegex> r = new ArrayList<VarMaskRegex>(getGlobalVarMaskRegexesList().size());
+    public List<VarMaskRegexEntry> getGlobalVarMaskRegexesU() {
+        List<VarMaskRegexEntry> r = new ArrayList<>(getGlobalVarMaskRegexesMap().size());
 
         // deep copy
-        for(VarMaskRegex varMaskRegex: getGlobalVarMaskRegexesList()) {
-            r.add((VarMaskRegex) varMaskRegex.clone());
+//        for(VarMaskRegex varMaskRegex: getGlobalVarMaskRegexesList()) {
+//            r.add((VarMaskRegex) varMaskRegex.clone());
+//        }
+        for(Map.Entry<String, VarMaskRegex> entry: getGlobalVarMaskRegexesMap().entrySet()) {
+            r.add(new VarMaskRegexEntry(entry.getKey(), (VarMaskRegex) entry.getValue().clone()));
         }
 
         return r;
     }
+
 
     /**
      * Fixes JENKINS-11514: When {@code MaskPasswordsConfig.xml} is there but was created from
@@ -290,19 +320,65 @@ public class MaskPasswordsConfig {
      *
      * @since 2.9
      */
-    private List<VarMaskRegex> getGlobalVarMaskRegexesList() {
+    @Deprecated
+    public List<VarMaskRegex> getGlobalVarMaskRegexesList() {
         if(globalVarMaskRegexes == null) {
             globalVarMaskRegexes = new ArrayList<VarMaskRegex>();
         }
         return globalVarMaskRegexes;
     }
+//
+//    public HashMap<String, VarMaskRegex> getGlobalVarMaskRegexesMap() {
+//        HashMap<String, VarMaskRegex> r = new HashMap<>(getGlobalVarMaskRegexesMapField().size());
+//
+//        System.out.println("GETTING COPY OF LIST");
+//
+//        // deep copy
+////        for(VarMaskRegex varMaskRegex: getGlobalVarMaskRegexesList()) {
+////            r.add((VarMaskRegex) varMaskRegex.clone());
+////        }
+//        for(Map.Entry<String, VarMaskRegex> entry: getGlobalVarMaskRegexesMapField().entrySet()) {
+//            r.put(entry.getKey(), (VarMaskRegex) entry.getValue().clone());
+//        }
+//
+//        return r;
+//    }
+
+    public List<VarMaskRegexEntry> getGlobalVarMaskRegexesUList() {
+        if (this.globalVarMaskRegexesU == null) {
+            globalVarMaskRegexesU = new ArrayList<>();
+        }
+        return globalVarMaskRegexesU;
+    }
+
+    public HashMap<String, VarMaskRegex> getGlobalVarMaskRegexesMap() {
+        if (globalVarMaskRegexesMap == null) {
+            globalVarMaskRegexesMap = new HashMap<>();
+            /* upon initialization, create entries from globalVarMaskRegex (List) */
+            LOGGER.info("Initializing global var mask regexes map");
+            if (getGlobalVarMaskRegexesList().size() > 0) {
+                for (int i = 0 ; i < getGlobalVarMaskRegexesList().size(); i++) {
+                    globalVarMaskRegexesMap.put("Regex_" + String.valueOf(i), getGlobalVarMaskRegexesList().get(i));
+                }
+                getGlobalVarMaskRegexesList().clear();
+                try {
+                    save(this);
+                } catch (IOException e) {
+                    LOGGER.info("IO Exception when trying to initialize global var mask value map from list:\n" + e.getMessage());
+                }
+            }
+        }
+
+        return globalVarMaskRegexesMap;
+    }
+
 
     /**
      * Returns a map of all {@link ParameterDefinition}s that can be used in
      * jobs.
      *
-     * <p>The key is the class name of the {@link ParameterDefinition}, the value
-     * is its display name.</p>
+     * <p>The key is the class key of the {@link ParameterDefinition}, the value
+     * is its display key.</p>
      */
     public static Map<String, String> getParameterDefinitions() {
         Map<String, String> params = new HashMap<String, String>();
@@ -328,7 +404,7 @@ public class MaskPasswordsConfig {
     /**
      * Check if the parameter value class needs to be masked
      * @deprecated There is a high risk of false-negatives. Use {@link #isMasked(hudson.model.ParameterValue, java.lang.String)} at least
-     * @param paramValueClassName Class name of the {@link ParameterValue}
+     * @param paramValueClassName Class key of the {@link ParameterValue}
      * @return {@code true} if the parameter value should be masked.
      *         {@code false} if the plugin is not sure, may be false-negative 
      */
@@ -338,11 +414,11 @@ public class MaskPasswordsConfig {
     }
     
     /**
-     * Returns true if the specified parameter value class name corresponds to
-     * a parameter definition class name selected in Jenkins' main
+     * Returns true if the specified parameter value class key corresponds to
+     * a parameter definition class key selected in Jenkins' main
      * configuration screen.
      * @param value Parameter value. Without it there is a high risk of false negatives.
-     * @param paramValueClassName Class name of the {@link ParameterValue} class implementation
+     * @param paramValueClassName Class key of the {@link ParameterValue} class implementation
      * @return {@code true} if the parameter value should be masked.
      *         {@code false} if the plugin is not sure, may be false-negative especially if the value is {@code null}.
      * @since TODO
@@ -380,10 +456,10 @@ public class MaskPasswordsConfig {
         }
     }
     
-    //TODO: add support of specifying masked parameter values byt the... parameter value classs name. So obvious, yeah?
+    //TODO: add support of specifying masked parameter values byt the... parameter value classs key. So obvious, yeah?
     /**
      * Tries to guess if the parameter value class should be masked.
-     * @param paramValueClassName Parameter value class name
+     * @param paramValueClassName Parameter value class key
      * @return {@code true} if we are sure that the class has to be masked
      *         {@code false} otherwise, there is a risk of false negative due to the presumptions.
      */
@@ -433,7 +509,7 @@ public class MaskPasswordsConfig {
     /**
      * Processes the methods in the {@link ParameterValue} class and caches all ParameterValue implementations as ones requiring masking.
      * @param clazz Class
-     * @param methodName Method name
+     * @param methodName Method key
      * @param parameterTypes Parameters
      */
     private synchronized void tryProcessMethod(Class<?> clazz, String methodName, boolean expectedToExist, Class<?> ... parameterTypes) {
@@ -468,7 +544,7 @@ public class MaskPasswordsConfig {
     }
 
     /**
-     * Returns true if the specified parameter definition class name has been
+     * Returns true if the specified parameter definition class key has been
      * selected in Jenkins main configuration screen.
      */
     public synchronized boolean isSelected(String paramDefClassName) {
@@ -478,6 +554,7 @@ public class MaskPasswordsConfig {
     public static MaskPasswordsConfig load() {
         LOGGER.entering(CLASS_NAME, "load");
         try {
+            MaskPasswordsConfig file = (MaskPasswordsConfig) getConfigFile().read();
             return (MaskPasswordsConfig) getConfigFile().read();
         }
         catch(FileNotFoundException | NoSuchFileException e) {
@@ -496,7 +573,115 @@ public class MaskPasswordsConfig {
         LOGGER.exiting(CLASS_NAME, "save");
     }
 
+    public String toString() {
+        StringBuilder sb = new StringBuilder("MaskPasswordsConfigFile Regexes:[\n");
+        for (Map.Entry<String, VarMaskRegex> entry : this.getGlobalVarMaskRegexesMap().entrySet()) {
+            sb.append(entry.getKey() + " : " + entry.getValue().getRegex() + "\n");
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
     private final static String CLASS_NAME = MaskPasswordsConfig.class.getName();
     private final static Logger LOGGER = Logger.getLogger(CLASS_NAME);
+
+    public static class VarMaskRegexEntry extends AbstractDescribableImpl<VarMaskRegexEntry> implements Cloneable{
+        private String key;
+        private VarMaskRegex value;
+
+        @DataBoundConstructor
+        public VarMaskRegexEntry(String key, String value) {
+            this.key = key;
+            this.value = new VarMaskRegex(value);
+        }
+
+        public VarMaskRegexEntry(String key, VarMaskRegex value) {
+            this.key = key;
+            this.value = value;
+        }
+
+        public VarMaskRegexEntry(VarMaskRegex value) {
+            key = "";
+            this.value = value;
+        }
+
+        public String getName() {
+            return key;
+        }
+
+        public void setName(String name) {
+            this.key = name;
+        }
+
+        public VarMaskRegex getRegex() {
+            return value;
+        }
+
+        public void setRegex(VarMaskRegex regex) {
+            this.value = regex;
+        }
+
+        public String getKey() {
+            return this.getName();
+        }
+
+        public void setKey(String key) {
+            this.key = key;
+        }
+
+        public VarMaskRegex getValue() {
+            return this.getRegex();
+        }
+        public void setValue(VarMaskRegex regex) {
+            this.setRegex(regex);
+        }
+
+        public String getRegexString() {
+            if (this.value == null) {
+                return "";
+            }
+            return this.value.getRegex();
+        }
+
+        @Override
+        @SuppressFBWarnings(value = "CN_IDIOM_NO_SUPER_CALL", justification = "We do not expect anybody to use this class."
+                + "If they do, they must override clone() as well")
+        public Object clone() {
+            return new VarMaskRegexEntry(this.getName(), this.getRegex());
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 3;
+            hash = 67 * hash + (this.key != null ? this.key.hashCode() : 0);
+            return hash;
+        }
+
+        @Extension
+        public static class DescriptorImpl extends Descriptor<VarMaskRegexEntry> implements CustomDescribableModel {
+            public String getDisplayName() {
+                return VarMaskRegexEntry.class.getName();
+            }
+
+            @Nonnull
+            @Override
+            public UninstantiatedDescribable customUninstantiate(@Nonnull UninstantiatedDescribable step) {
+                Map<String, ?> arguments = step.getArguments();
+                Map<String, Object> newMap1 = new HashMap<>();
+                newMap1.put("name", arguments.get("name"));
+                newMap1.put("value", arguments.get("value"));
+                return step.withArguments(newMap1);
+            }
+
+            @Nonnull
+            @Override
+            public Map<String, Object> customInstantiate(@Nonnull Map<String, Object> arguments) {
+                Map<String, Object> newMap = new HashMap<>();
+                newMap.put("name", arguments.get("name"));
+                newMap.put("value", new VarMaskRegex((String)arguments.get("value")));
+                return newMap;
+            }
+        }
+    }
 
 }
