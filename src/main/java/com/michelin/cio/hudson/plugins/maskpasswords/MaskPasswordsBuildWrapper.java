@@ -173,21 +173,6 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
             }
         }
 
-//        @SuppressWarnings("rawtypes")
-//        @Override
-//        public OutputStream decorateLogger(AbstractBuild _ignore, OutputStream logger) throws IOException, InterruptedException {
-//            LOGGER.info("Decorating Log with abstractbuild.");
-//            List<String> passwords = new ArrayList<String>();
-//            List<String> regexes = new ArrayList<String>();
-//            for (Secret password : allPasswords) {
-//                passwords.add(password.getPlainText());
-//            }
-//            for (String regex : allRegexes) {
-//                regexes.add(regex);
-//            }
-//            return new MaskPasswordsOutputStream(logger, passwords, regexes);
-//        }
-
         @Override
         public OutputStream decorateLogger(Run run, OutputStream logger) {
             LOGGER.info("Decorating Log with RUN.");

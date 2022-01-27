@@ -327,22 +327,6 @@ public class MaskPasswordsConfig {
         }
         return globalVarMaskRegexes;
     }
-//
-//    public HashMap<String, VarMaskRegex> getGlobalVarMaskRegexesMap() {
-//        HashMap<String, VarMaskRegex> r = new HashMap<>(getGlobalVarMaskRegexesMapField().size());
-//
-//        System.out.println("GETTING COPY OF LIST");
-//
-//        // deep copy
-////        for(VarMaskRegex varMaskRegex: getGlobalVarMaskRegexesList()) {
-////            r.add((VarMaskRegex) varMaskRegex.clone());
-////        }
-//        for(Map.Entry<String, VarMaskRegex> entry: getGlobalVarMaskRegexesMapField().entrySet()) {
-//            r.put(entry.getKey(), (VarMaskRegex) entry.getValue().clone());
-//        }
-//
-//        return r;
-//    }
 
     public List<VarMaskRegexEntry> getGlobalVarMaskRegexesUList() {
         if (this.globalVarMaskRegexesU == null) {
