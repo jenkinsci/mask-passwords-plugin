@@ -40,7 +40,10 @@
     </f:entry>
     <f:entry title="${%RegexTitle}">
         <f:repeatable field="varMaskRegexes">
-            <f:entry title="${%Regex}" field="regex">
+            <f:entry title="Name" field="key">
+                <f:textbox />
+            </f:entry>
+            <f:entry title="${%Regex}" field="value">
                 <f:textbox />
             </f:entry>
             <div align="right"><f:repeatableDeleteButton/></div>

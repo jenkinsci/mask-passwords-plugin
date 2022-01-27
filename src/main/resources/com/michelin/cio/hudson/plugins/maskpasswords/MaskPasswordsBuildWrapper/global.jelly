@@ -43,8 +43,11 @@
         </f:entry>
         <!-- global regexes -->
         <f:entry title="${%GlobalVarMaskRegexes}">
-            <f:repeatable field="globalVarMaskRegexes">
-                <f:entry title="${%Regex}" field="regex">
+            <f:repeatable field="globalVarMaskRegexesU">
+                <f:entry title="Name" field="key">
+                    <f:textbox />
+                </f:entry>
+                <f:entry title="${%Regex}" field="value">
                     <f:textbox />
                 </f:entry>
                 <div align="right"><f:repeatableDeleteButton/></div>

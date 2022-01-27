@@ -29,13 +29,17 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.console.LineTransformationOutputStream;
 import org.apache.commons.lang.StringUtils;
 
+import javax.annotation.CheckForNull;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.regex.Pattern;
-import javax.annotation.CheckForNull;
+
+import static com.michelin.cio.hudson.plugins.util.MaskPasswordsUtil.secretsMaskPatterns;
 
 //TODO: UTF-8 hardcoding is not a perfect solution
 /**
@@ -45,69 +49,54 @@ import javax.annotation.CheckForNull;
  */
 public class MaskPasswordsOutputStream extends LineTransformationOutputStream {
 
-    private final static String MASKED_PASSWORD = "********";
-
     private final OutputStream logger;
-    private final Pattern passwordsAsPattern;
+    private final List<Pattern> passwordsAsPatterns;
+    private final String runName;
 
     /**
      * @param logger The output stream to which this {@link MaskPasswordsOutputStream}
      *               will write to
      * @param passwords A collection of {@link String}s to be masked
      * @param regexes A collection of Regular Expression {@link String}s to be masked
+     * @param runName A string representation of the Run/Build the output stream logger is associated with. Used for logging purposes.
      */
-    public MaskPasswordsOutputStream(OutputStream logger, @CheckForNull Collection<String> passwords, @CheckForNull Collection<String> regexes) {
+    public MaskPasswordsOutputStream(OutputStream logger, @CheckForNull Collection<String> passwords, @CheckForNull Collection<String> regexes, String runName) {
         this.logger = logger;
+        this.runName = (runName != null) ? runName : "";
+        passwordsAsPatterns = new ArrayList<>();
 
-
-        if((passwords != null && passwords.size() > 0) || (regexes != null && regexes.size() > 0)) {
-            // passwords are aggregated into a regex which is compiled as a pattern
-            // for efficiency
-            StringBuilder regex = new StringBuilder().append('(');
-
-            int nbMaskedPasswords = 0;
-
-            if(passwords != null && passwords.size() > 0) {
-              for(String password: passwords) {
-                  if(StringUtils.isNotEmpty(password)) { // we must not handle empty passwords
-                      regex.append(Pattern.quote(password));
-                      regex.append('|');
+        if (passwords != null) {
+            // Passwords aggregated into single regex which is compiled as a pattern for efficiency
+            StringBuilder pwRegex = new StringBuilder().append('(');
+            int pwCount = 0;
+            for (String pw : passwords) {
+                if (StringUtils.isNotEmpty(pw)) {
+                    pwCount++;
+                    pwRegex.append(Pattern.quote(pw));
+                    pwRegex.append('|');
                     try {
-                        String encodedPassword = URLEncoder.encode(password, "UTF-8");
-                        if (!encodedPassword.equals(password)) {
-                            // add to masking regex
-                            regex.append(Pattern.quote(encodedPassword));
-                            regex.append('|');
+                        String encodedPassword = URLEncoder.encode(pw, "UTF-8");
+                        if (!encodedPassword.equals(pw)) {
+                            pwRegex.append(Pattern.quote(encodedPassword));
+                            pwRegex.append('|');
                         }
                     } catch (UnsupportedEncodingException e) {
                         // ignore any encoding problem => status quo
                     }
-                      nbMaskedPasswords++;
-                  }
-              }
+                }
             }
-            if(regexes != null && regexes.size() > 0) {
-              for(String user_regex: regexes) {
-                  if(StringUtils.isNotEmpty(user_regex)) { // we must not handle empty passwords
-                      regex.append(user_regex);
-                      regex.append('|');
-                      nbMaskedPasswords++;
-                  }
-              }
+            if (pwCount > 0) {
+                pwRegex.deleteCharAt(pwRegex.length()-1); // removes the last unuseful pipe
+                pwRegex.append(')');
+                passwordsAsPatterns.add(Pattern.compile(pwRegex.toString()));
             }
+        }
+        if (regexes != null) {
+            for (String r: regexes) {
+                passwordsAsPatterns.add(Pattern.compile(r));
+            }
+        }
 
-            if(nbMaskedPasswords++ >= 1) { // is there at least one password to mask?
-                regex.deleteCharAt(regex.length()-1); // removes the last unuseful pipe
-                regex.append(')');
-                passwordsAsPattern = Pattern.compile(regex.toString());
-            }
-            else { // no passwords to hide
-                passwordsAsPattern = null;
-            }
-        }
-        else { // no passwords to hide
-            passwordsAsPattern = null;
-        }
     }
 
     /**
@@ -119,13 +108,17 @@ public class MaskPasswordsOutputStream extends LineTransformationOutputStream {
         this(logger, passwords, null);
     }
 
+    public MaskPasswordsOutputStream(OutputStream logger, @CheckForNull Collection<String> passwords, @CheckForNull Collection<String> regexes) {
+        this(logger, passwords, regexes, "");
+    }
+
     // TODO: The logic relies on the default encoding, which may cause issues when master and agent have different encodings
     @SuppressFBWarnings(value = "DM_DEFAULT_ENCODING", justification = "Open TODO item for wider rework")
     @Override
     protected void eol(byte[] bytes, int len) throws IOException {
         String line = new String(bytes, 0, len);
-        if(passwordsAsPattern != null) {
-            line = passwordsAsPattern.matcher(line).replaceAll(MASKED_PASSWORD);
+        if(passwordsAsPatterns != null && line != null) {
+            line = secretsMaskPatterns(passwordsAsPatterns, line, runName);
         }
         logger.write(line.getBytes());
     }

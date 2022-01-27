@@ -25,6 +25,8 @@
 
 package com.michelin.cio.hudson.plugins.maskpasswords;
 
+import com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsConfig.VarMaskRegexEntry;
+
 import com.thoughtworks.xstream.converters.Converter;
 import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
@@ -33,8 +35,6 @@ import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.EnvVars;
 import hudson.Extension;
-import hudson.FilePath;
-import hudson.Launcher;
 import hudson.console.ConsoleLogFilter;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractDescribableImpl;
@@ -46,22 +46,6 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.tasks.BuildWrapperDescriptor;
 import hudson.util.Secret;
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
-
 import jenkins.tasks.SimpleBuildWrapper;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -74,6 +58,21 @@ import org.jvnet.localizer.ResourceBundleHolder;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * Build wrapper that alters the console so that passwords don't get displayed.
  *
@@ -82,17 +81,17 @@ import org.kohsuke.stapler.StaplerRequest;
 public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
 
     private final List<VarPasswordPair> varPasswordPairs;
-    private final List<VarMaskRegex> varMaskRegexes;
+    private final List<VarMaskRegexEntry> varMaskRegexes;
 
     @DataBoundConstructor
-    public MaskPasswordsBuildWrapper(List<VarPasswordPair> varPasswordPairs, List<VarMaskRegex> varMaskRegexes) {
+    public MaskPasswordsBuildWrapper(List<VarPasswordPair> varPasswordPairs, List<VarMaskRegexEntry> varMaskRegexes) {
         this.varPasswordPairs = varPasswordPairs;
         this.varMaskRegexes = varMaskRegexes;
     }
 
     public MaskPasswordsBuildWrapper(List<VarPasswordPair> varPasswordPairs) {
         this.varPasswordPairs = varPasswordPairs;
-        this.varMaskRegexes = new ArrayList<VarMaskRegex>();
+        this.varMaskRegexes = new ArrayList<>();
     }
 
     @Override
@@ -108,9 +107,9 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         }
 
         // global regexes
-        List<VarMaskRegex> globalVarMaskRegexes = config.getGlobalVarMaskRegexes();
-        for(VarMaskRegex globalVarMaskRegex: globalVarMaskRegexes) {
-            allRegexes.add(globalVarMaskRegex.getRegex());
+        List<MaskPasswordsConfig.VarMaskRegexEntry> globalVarMaskRegexes = config.getGlobalVarMaskRegexesU();
+        for(MaskPasswordsConfig.VarMaskRegexEntry globalVarMaskRegex: globalVarMaskRegexes) {
+            allRegexes.add(globalVarMaskRegex.getValue().getRegex());
         }
 
         // job's passwords
@@ -125,8 +124,8 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
 
         // job's regexes
         if(varMaskRegexes != null) {
-            for(VarMaskRegex varMaskRegex: varMaskRegexes) {
-                String regex = varMaskRegex.getRegex();
+            for(VarMaskRegexEntry entry: varMaskRegexes) {
+                String regex = entry.getRegexString();
                 if(StringUtils.isNotBlank(regex)) {
                     allRegexes.add(regex);
                 }
@@ -174,9 +173,9 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
             }
         }
 
-        @SuppressWarnings("rawtypes")
         @Override
-        public OutputStream decorateLogger(AbstractBuild _ignore, OutputStream logger) throws IOException, InterruptedException {
+        public OutputStream decorateLogger(Run run, OutputStream logger) {
+            LOGGER.info("Decorating Log with RUN.");
             List<String> passwords = new ArrayList<String>();
             List<String> regexes = new ArrayList<String>();
             for (Secret password : allPasswords) {
@@ -185,7 +184,8 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
             for (String regex : allRegexes) {
                 regexes.add(regex);
             }
-            return new MaskPasswordsOutputStream(logger, passwords, regexes);
+            String runName = run != null ? run.getFullDisplayName() : "";
+            return new MaskPasswordsOutputStream(logger, passwords, regexes, runName);
         }
 
     }
@@ -231,7 +231,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         return varPasswordPairs;
     }
 
-    public List<VarMaskRegex> getVarMaskRegexes() {
+    public List<VarMaskRegexEntry> getVarMaskRegexes() {
         return varMaskRegexes;
     }
 
@@ -334,7 +334,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         private final String regex;
 
         @DataBoundConstructor
-        public VarMaskRegex(String regex) {
+        public  VarMaskRegex(String regex) {
             this.regex = regex;
         }
 
@@ -369,6 +369,10 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
             return hash;
         }
 
+        public String toString() {
+            return regex;
+        }
+
         @Extension
         public static class DescriptorImpl extends Descriptor<VarMaskRegex> {}
 
@@ -391,7 +395,9 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
                 getConfig().clear();
 
                 LOGGER.fine("Processing the maskedParamDefs and selectedMaskedParamDefs JSON objects");
-                JSONObject submittedForm = req.getSubmittedForm();
+                JSONObject  submittedForm = req.getSubmittedForm();
+
+                LOGGER.info("JSON Submitted form:\n" + submittedForm);
 
                 // parameter definitions to be automatically masked
                 JSONArray paramDefinitions = submittedForm.getJSONArray("maskedParamDefs");
@@ -423,20 +429,22 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
                 }
 
                 // global regexes
-                if(submittedForm.has("globalVarMaskRegexes")) {
-                    Object o = submittedForm.get("globalVarMaskRegexes");
+                if(submittedForm.has("globalVarMaskRegexesU")) {
+                    Object o = submittedForm.get("globalVarMaskRegexesU");
 
                     if(o instanceof JSONArray) {
-                        JSONArray jsonArray = submittedForm.getJSONArray("globalVarMaskRegexes");
+                        JSONArray jsonArray = submittedForm.getJSONArray("globalVarMaskRegexesU");
                         for(int i = 0; i < jsonArray.size(); i++) {
-                            getConfig().addGlobalVarMaskRegex(new VarMaskRegex(
-                                    jsonArray.getJSONObject(i).getString("regex")));
+                            getConfig().addGlobalVarMaskRegex(
+                                    jsonArray.getJSONObject(i).getString("key"),
+                                    new VarMaskRegex(jsonArray.getJSONObject(i).getString("value")));
                         }
                     }
                     else if(o instanceof JSONObject) {
-                        JSONObject jsonObject = submittedForm.getJSONObject("globalVarMaskRegexes");
-                        getConfig().addGlobalVarMaskRegex(new VarMaskRegex(
-                                jsonObject.getString("regex")));
+                        JSONObject jsonObject = submittedForm.getJSONObject("globalVarMaskRegexesU");
+                        getConfig().addGlobalVarMaskRegex(
+                                jsonObject.getString("key"),
+                                new VarMaskRegex(jsonObject.getString("value")));
                     }
                 }
 
@@ -462,8 +470,8 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
             return getConfig().getGlobalVarPasswordPairs();
         }
 
-        public List<VarMaskRegex> getGlobalVarMaskRegexes() {
-            return getConfig().getGlobalVarMaskRegexes();
+        public List<MaskPasswordsConfig.VarMaskRegexEntry> getGlobalVarMaskRegexesU() {
+            return getConfig().getGlobalVarMaskRegexesU();
         }
 
         /**
@@ -499,6 +507,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         private final static String VAR_ATT = "var";
         private final static String PASSWORD_ATT = "password";
         private final static String REGEX_ATT = "regex";
+        private final static String REGEX_NAME = "name";
 
         public boolean canConvert(Class clazz) {
             return clazz.equals(MaskPasswordsBuildWrapper.class);
@@ -525,13 +534,14 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
             // varMaskRegexes
             if(maskPasswordsBuildWrapper.getVarMaskRegexes() != null) {
                 writer.startNode(VAR_MASK_REGEXES_NODE);
-                for(VarMaskRegex varMaskRegex: maskPasswordsBuildWrapper.getVarMaskRegexes()) {
+                for(VarMaskRegexEntry varMaskRegex: maskPasswordsBuildWrapper.getVarMaskRegexes()) {
                     // blank passwords are skipped
-                    if(StringUtils.isBlank(varMaskRegex.getRegex())) {
+                    if(StringUtils.isBlank(varMaskRegex.getRegexString())) {
                         continue;
                     }
                     writer.startNode(VAR_MASK_REGEX_NODE);
-                    writer.addAttribute(REGEX_ATT, varMaskRegex.getRegex());
+                    writer.addAttribute(REGEX_NAME, varMaskRegex.getName());
+                    writer.addAttribute(REGEX_ATT, varMaskRegex.getRegexString());
                     writer.endNode();
                 }
                 writer.endNode();
@@ -540,7 +550,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
 
         public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext uc) {
             List<VarPasswordPair> varPasswordPairs = new ArrayList<VarPasswordPair>();
-            List<VarMaskRegex> varMaskRegexes = new ArrayList<VarMaskRegex>();
+            List<VarMaskRegexEntry> varMaskRegexes = new ArrayList<>();
 
             while(reader.hasMoreChildren()) {
                 reader.moveDown();
@@ -565,7 +575,8 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
                     while(reader.hasMoreChildren()) {
                         reader.moveDown();
                         if(reader.getNodeName().equals(VAR_MASK_REGEX_NODE)) {
-                            varMaskRegexes.add(new VarMaskRegex(
+                            varMaskRegexes.add(new VarMaskRegexEntry(
+                                    reader.getAttribute(REGEX_NAME),
                                     reader.getAttribute(REGEX_ATT)));
                         }
                         else {

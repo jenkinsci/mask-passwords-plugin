@@ -75,9 +75,9 @@ public class MaskPasswordsConsoleLogFilter extends ConsoleLogFilter  implements 
       }
 
       // global regexes
-      List<MaskPasswordsBuildWrapper.VarMaskRegex> globalVarMaskRegexes = config.getGlobalVarMaskRegexes();
-      for(MaskPasswordsBuildWrapper.VarMaskRegex globalVarMaskRegex: globalVarMaskRegexes) {
-          regexes.add(globalVarMaskRegex.getRegex());
+      List<MaskPasswordsConfig.VarMaskRegexEntry> globalVarMaskRegexes = config.getGlobalVarMaskRegexesU();
+      for(MaskPasswordsConfig.VarMaskRegexEntry globalVarMaskRegex: globalVarMaskRegexes) {
+          regexes.add(globalVarMaskRegex.getValue().getRegex());
       }
       return new MaskPasswordsOutputStream(logger, passwords, regexes);
   }
