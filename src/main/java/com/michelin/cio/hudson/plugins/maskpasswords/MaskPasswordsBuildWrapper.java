@@ -174,7 +174,6 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
 
         @Override
         public OutputStream decorateLogger(Run run, OutputStream logger) {
-            LOGGER.info("Decorating Log with RUN.");
             List<String> passwords = new ArrayList<String>();
             List<String> regexes = new ArrayList<String>();
             for (Secret password : allPasswords) {
@@ -395,8 +394,6 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
 
                 LOGGER.fine("Processing the maskedParamDefs and selectedMaskedParamDefs JSON objects");
                 JSONObject  submittedForm = req.getSubmittedForm();
-
-                LOGGER.info("JSON Submitted form:\n" + submittedForm);
 
                 // parameter definitions to be automatically masked
                 JSONArray paramDefinitions = submittedForm.getJSONArray("maskedParamDefs");

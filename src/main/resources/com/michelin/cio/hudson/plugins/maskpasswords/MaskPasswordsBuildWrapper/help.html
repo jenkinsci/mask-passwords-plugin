@@ -43,8 +43,8 @@
     This allows accessing the password by using the variable rather than hard-coding
     it in a field which is not ciphered (e.g. the ones of the <b>Invoke Ant</b> or
     <b>Execute shell</b> build steps).</li>
-    <li>If <b>Regex</b> is set, then any text matching that value will be masked
-    in the console output. The value should not contain start- or end-of-string
+    <li>If <b>Regex</b> is set, then any text matching that regex will be masked
+    in the console output. The regex should not contain start- or end-of-string
     markers and will be internally and-ed (piped) together with all other regexes
     and regexes matching the specified names and passwords.</li>
     </ul>
