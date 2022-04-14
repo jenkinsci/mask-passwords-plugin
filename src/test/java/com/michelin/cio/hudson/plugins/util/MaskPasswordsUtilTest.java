@@ -1,6 +1,5 @@
 package com.michelin.cio.hudson.plugins.util;
 
-
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
@@ -14,7 +13,6 @@ import java.util.regex.Pattern;
 import static com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper.VarMaskRegex;
 import static com.michelin.cio.hudson.plugins.util.MaskPasswordsUtil.passwordRegexCombiner;
 import static org.junit.Assert.assertEquals;
-
 
 public class MaskPasswordsUtilTest {
     @Test

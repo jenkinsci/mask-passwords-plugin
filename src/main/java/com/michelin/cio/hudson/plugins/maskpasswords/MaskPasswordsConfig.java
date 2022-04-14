@@ -168,9 +168,9 @@ public class MaskPasswordsConfig {
     }
 
     /**
-     * Adds a value at the global level.
+     * Adds a regex at the global level.
      *
-     * <p>If value is blank (as defined per the Commons Lang
+     * <p>If regex is blank (as defined per the Commons Lang
      * library), then the pair is not added.</p>
      *
      * @since 2.9
@@ -182,7 +182,7 @@ public class MaskPasswordsConfig {
     public void addGlobalVarMaskRegex(String name, VarMaskRegex varMaskRegex) {
         // blank values are forbidden
         if(StringUtils.isBlank(varMaskRegex.getRegex())) {
-            LOGGER.fine("addGlobalVarMaskRegex NOT adding null value");
+            LOGGER.fine("addGlobalVarMaskRegex NOT adding null regex");
             return;
         }
         // blank values are forbidden, will give default numbered key name

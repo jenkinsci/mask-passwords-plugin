@@ -26,7 +26,6 @@
 package com.michelin.cio.hudson.plugins.maskpasswords;
 
 import com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsConfig.VarMaskRegexEntry;
-
 import com.thoughtworks.xstream.converters.Converter;
 import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
@@ -334,7 +333,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         private final String regex;
 
         @DataBoundConstructor
-        public  VarMaskRegex(String regex) {
+        public VarMaskRegex(String regex) {
             this.regex = regex;
         }
 

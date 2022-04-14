@@ -59,7 +59,7 @@ public class MaskPasswordsURLEncodingTest {
     }
     
     @Test
-    public void  passwordMaskedEncoded() throws Exception {
+    public void passwordMaskedEncoded() throws Exception {
         story.addStep(new Statement() {
             @Override
             public void evaluate() throws Throwable {
