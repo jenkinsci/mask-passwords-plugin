@@ -150,6 +150,10 @@ public class MaskPasswordsConfig {
      return this;
     }
 
+    private boolean isGlobalVarMaskRegexesNull() {
+        return (this.globalVarMaskRegexesMap == null) || (this.globalVarMaskRegexesU == null);
+    }
+
     /**
      * Adds a key/password pair at the global level.
      *
@@ -179,6 +183,10 @@ public class MaskPasswordsConfig {
         addGlobalVarMaskRegex("", varMaskRegex);
     }
 
+    public void addGlobalVarMaskRegex(String name, String regex) {
+        addGlobalVarMaskRegex(name, new VarMaskRegex(regex));
+    }
+
     public void addGlobalVarMaskRegex(String name, VarMaskRegex varMaskRegex) {
         // blank values are forbidden
         if(StringUtils.isBlank(varMaskRegex.getRegex())) {
@@ -195,6 +203,17 @@ public class MaskPasswordsConfig {
         getGlobalVarMaskRegexesUList().clear();
         for (Map.Entry<String, VarMaskRegex> entry: getGlobalVarMaskRegexesMap().entrySet()) {
             getGlobalVarMaskRegexesUList().add(new VarMaskRegexEntry(entry.getKey(), entry.getValue()));
+        }
+    }
+
+    public void removeGlobalVarMaskRegexByName(@Nonnull String name) {
+        if (!isGlobalVarMaskRegexesNull()) {
+            VarMaskRegex r = getGlobalVarMaskRegexesMap().get(name);
+            if (r != null) {
+                VarMaskRegexEntry e = new VarMaskRegexEntry(name, r);
+                getGlobalVarMaskRegexesMap().remove(name);
+                getGlobalVarMaskRegexesU().remove(e);
+            }
         }
     }
 
@@ -352,7 +371,6 @@ public class MaskPasswordsConfig {
                 }
             }
         }
-
         return globalVarMaskRegexesMap;
     }
 
