@@ -26,10 +26,11 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define"
         xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form"
         xmlns:i="jelly:fmt" xmlns:p="/lib/hudson/project">
-    <f:entry title="${it.key}" description="${it.description}">
-        <div key="parameter" description="${it.description}">
-            <input type="hidden" key="key" value="${it.key}"/>
-            <f:password key="value" value="${it.defaultValue}"/>
+    <j:set var="escapeEntryTitleAndDescription" value="false"/>
+    <f:entry title="${h.escape(it.name)}" description="${it.formattedDescription}">
+        <div name="parameter" description="${it.description}">
+            <input type="hidden" name="name" value="${it.name}"/>
+            <f:password name="value" value="${it.defaultValue}"/>
         </div>
     </f:entry>
 </j:jelly>

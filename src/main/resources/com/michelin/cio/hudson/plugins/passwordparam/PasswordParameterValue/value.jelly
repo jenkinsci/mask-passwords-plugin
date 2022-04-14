@@ -26,7 +26,8 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define"
         xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form"
         xmlns:i="jelly:fmt" xmlns:p="/lib/hudson/project">
-    <f:entry title="${it.key}" description="${it.description}">
-        <f:textbox key="value" value="${%non-stored password parameter}" readonly="true"/>
+    <j:set var="escapeEntryTitleAndDescription" value="false"/>
+    <f:entry title="${h.escape(it.name)}" description="${it.formattedDescription}">
+        <f:textbox name="value" value="${%non-stored password parameter}" readonly="true"/>
     </f:entry>
 </j:jelly>
