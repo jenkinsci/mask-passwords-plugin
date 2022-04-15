@@ -227,7 +227,7 @@ public class MaskPasswordsConfig {
             if (getGlobalVarMaskRegexesUList().remove(e)) {
                 HashMap<String, VarMaskRegex> map = getGlobalVarMaskRegexesMap();
                 VarMaskRegex r = map.get(name);
-                if (r != null && r.getRegex().equals(regex)) {
+                if (r != null && r.getRegex() != null && regex != null && r.getRegex().equals(regex)) {
                     map.remove(name);
                 }
             }
