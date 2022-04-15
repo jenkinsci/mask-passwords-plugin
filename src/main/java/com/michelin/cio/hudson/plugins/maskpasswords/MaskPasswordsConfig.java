@@ -27,6 +27,7 @@ package com.michelin.cio.hudson.plugins.maskpasswords;
 import com.google.common.annotations.VisibleForTesting;
 import com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper.VarMaskRegex;
 import com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper.VarPasswordPair;
+import com.michelin.cio.hudson.plugins.util.MaskPasswordsUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.ExtensionList;
@@ -204,6 +205,8 @@ public class MaskPasswordsConfig {
         for (Map.Entry<String, VarMaskRegex> entry: getGlobalVarMaskRegexesMap().entrySet()) {
             getGlobalVarMaskRegexesUList().add(new VarMaskRegexEntry(entry.getKey(), entry.getValue()));
         }
+
+        saveSafeIO(this);
     }
 
     public void removeGlobalVarMaskRegexByName(@Nonnull String name) {
@@ -212,9 +215,19 @@ public class MaskPasswordsConfig {
             if (r != null) {
                 VarMaskRegexEntry e = new VarMaskRegexEntry(name, r);
                 getGlobalVarMaskRegexesMap().remove(name);
-                getGlobalVarMaskRegexesU().remove(e);
+                getGlobalVarMaskRegexesUList().remove(e);
             }
         }
+        saveSafeIO(this);
+    }
+
+    public void removeGlobalVarMaskRegex(String name, String regex) {
+        if (!isGlobalVarMaskRegexesNull()) {
+            VarMaskRegexEntry e = new VarMaskRegexEntry(name, regex);
+            this.getGlobalVarMaskRegexesUList().remove(e);
+            this.getGlobalVarMaskRegexesMap().remove(name);
+        }
+        saveSafeIO(this);
     }
 
     /**
@@ -256,6 +269,8 @@ public class MaskPasswordsConfig {
         
         // Drop caches
         invalidatePasswordValueClassCaches();
+
+        saveSafeIO(this);
     }
     
     /*package*/ synchronized void invalidatePasswordValueClassCaches() {
@@ -308,9 +323,6 @@ public class MaskPasswordsConfig {
         List<VarMaskRegexEntry> r = new ArrayList<>(getGlobalVarMaskRegexesMap().size());
 
         // deep copy
-//        for(VarMaskRegex varMaskRegex: getGlobalVarMaskRegexesList()) {
-//            r.add((VarMaskRegex) varMaskRegex.clone());
-//        }
         for(Map.Entry<String, VarMaskRegex> entry: getGlobalVarMaskRegexesMap().entrySet()) {
             r.add(new VarMaskRegexEntry(entry.getKey(), (VarMaskRegex) entry.getValue().clone()));
         }
@@ -576,6 +588,14 @@ public class MaskPasswordsConfig {
         LOGGER.exiting(CLASS_NAME, "save");
     }
 
+    static void saveSafeIO(MaskPasswordsConfig config) {
+        try {
+            save(config);
+        } catch(IOException e) {
+            LOGGER.warning("Failed to save MaskPasswordsConfig due to IOException: " + e.getMessage());
+        }
+    }
+
     public String toString() {
         StringBuilder sb = new StringBuilder("MaskPasswordsConfigFile Regexes:[\n");
         for (Map.Entry<String, VarMaskRegex> entry : this.getGlobalVarMaskRegexesMap().entrySet()) {
@@ -646,6 +666,10 @@ public class MaskPasswordsConfig {
             return this.value.getRegex();
         }
 
+        public String toString() {
+            return this.key + ":" + this.value;
+        }
+
         @Override
         @SuppressFBWarnings(value = "CN_IDIOM_NO_SUPER_CALL", justification = "We do not expect anybody to use this class."
                 + "If they do, they must override clone() as well")
@@ -658,6 +682,18 @@ public class MaskPasswordsConfig {
             int hash = 3;
             hash = 67 * hash + (this.key != null ? this.key.hashCode() : 0);
             return hash;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (other == null) {
+                return false;
+            } else if (!this.getClass().equals(other.getClass())) {
+                return false;
+            } else {
+                VarMaskRegexEntry otherE = (VarMaskRegexEntry) other;
+                return (this.getName().equals(otherE.getName())) && this.getRegex().equals(otherE.getRegex());
+            }
         }
 
         @Extension
