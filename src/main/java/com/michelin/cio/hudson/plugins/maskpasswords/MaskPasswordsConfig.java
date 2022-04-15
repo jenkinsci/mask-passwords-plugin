@@ -224,8 +224,14 @@ public class MaskPasswordsConfig {
     public void removeGlobalVarMaskRegex(String name, String regex) {
         if (!isGlobalVarMaskRegexesNull()) {
             VarMaskRegexEntry e = new VarMaskRegexEntry(name, regex);
-            this.getGlobalVarMaskRegexesUList().remove(e);
-            this.getGlobalVarMaskRegexesMap().remove(name);
+            if (getGlobalVarMaskRegexesUList().remove(e)) {
+                HashMap<String, VarMaskRegex> map = getGlobalVarMaskRegexesMap();
+                VarMaskRegex r = map.get(name);
+                if (r != null && r.getRegex().equals(regex)) {
+                    map.remove(name);
+                }
+            }
+
         }
         saveSafeIO(this);
     }
