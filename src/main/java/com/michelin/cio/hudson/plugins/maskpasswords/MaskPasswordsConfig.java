@@ -250,6 +250,7 @@ public class MaskPasswordsConfig {
         maskPasswordsParamDefClasses.clear();
         getGlobalVarPasswordPairsList().clear();
         getGlobalVarMaskRegexesList().clear();
+        getGlobalVarMaskRegexesUList().clear();
         getGlobalVarMaskRegexesMap().clear();
         globalVarEnableGlobally = false;
         
