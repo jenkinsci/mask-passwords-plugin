@@ -275,10 +275,15 @@ public class MaskPasswordsConfig {
         
         // Drop caches
         invalidatePasswordValueClassCaches();
-
-        saveSafeIO(this);
     }
-    
+
+    public synchronized void clear(boolean doSave) {
+        clear();
+        if (doSave) {
+            saveSafeIO(this);
+        }
+    }
+
     /*package*/ synchronized void invalidatePasswordValueClassCaches() {
         paramValueCache_maskedClasses.clear();
         paramValueCache_nonMaskedClasses.clear();
