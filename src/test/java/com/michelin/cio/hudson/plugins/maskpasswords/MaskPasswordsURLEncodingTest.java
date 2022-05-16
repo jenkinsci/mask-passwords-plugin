@@ -29,6 +29,7 @@ import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.jenkinsci.plugins.workflow.test.steps.SemaphoreStep;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -42,7 +43,6 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.Set;
 import java.util.TreeSet;
-import org.junit.Before;
 
 @Issue("JENKINS-34908")
 public class MaskPasswordsURLEncodingTest {

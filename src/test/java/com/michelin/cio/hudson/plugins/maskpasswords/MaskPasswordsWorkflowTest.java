@@ -24,8 +24,30 @@
 
 package com.michelin.cio.hudson.plugins.maskpasswords;
 
-import hudson.model.*;
 import hudson.Launcher;
+import hudson.model.AbstractBuild;
+import hudson.model.BuildListener;
+import hudson.model.Cause;
+import hudson.model.FreeStyleBuild;
+import hudson.model.FreeStyleProject;
+import hudson.model.Result;
+import hudson.util.Secret;
+import org.apache.commons.io.FileUtils;
+import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
+import org.jenkinsci.plugins.workflow.job.WorkflowJob;
+import org.jenkinsci.plugins.workflow.job.WorkflowRun;
+import org.jenkinsci.plugins.workflow.steps.CoreWrapperStep;
+import org.jenkinsci.plugins.workflow.steps.StepConfigTester;
+import org.jenkinsci.plugins.workflow.test.steps.SemaphoreStep;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runners.model.Statement;
+import org.jvnet.hudson.test.BuildWatcher;
+import org.jvnet.hudson.test.Issue;
+import org.jvnet.hudson.test.RestartableJenkinsRule;
+import org.jvnet.hudson.test.TestBuilder;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -35,23 +57,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-import hudson.util.Secret;
-import org.apache.commons.io.FileUtils;
-import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
-import org.jenkinsci.plugins.workflow.job.WorkflowJob;
-import org.jenkinsci.plugins.workflow.job.WorkflowRun;
-import org.jenkinsci.plugins.workflow.steps.CoreWrapperStep;
-import org.jenkinsci.plugins.workflow.steps.StepConfigTester;
-import org.jenkinsci.plugins.workflow.test.steps.SemaphoreStep;
-import org.junit.Test;
-import static org.junit.Assert.*;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.runners.model.Statement;
-import org.jvnet.hudson.test.BuildWatcher;
-import org.jvnet.hudson.test.Issue;
-import org.jvnet.hudson.test.RestartableJenkinsRule;
-import org.jvnet.hudson.test.TestBuilder;
+import static org.junit.Assert.assertEquals;
 
 @Issue("JENKINS-27392")
 public class MaskPasswordsWorkflowTest {
@@ -83,15 +89,16 @@ public class MaskPasswordsWorkflowTest {
         story.then(step -> {
                 MaskPasswordsBuildWrapper bw1 = new MaskPasswordsBuildWrapper(
                   null,
-                  Collections.singletonList(new MaskPasswordsBuildWrapper.VarMaskRegex("foobar"))
+                  Collections.singletonList(new MaskPasswordsConfig.VarMaskRegexEntry("test", new MaskPasswordsBuildWrapper.VarMaskRegex("foobar")))
                 );
                 CoreWrapperStep step1 = new CoreWrapperStep(bw1);
                 CoreWrapperStep step2 = new StepConfigTester(step).configRoundTrip(step1);
                 MaskPasswordsBuildWrapper bw2 = (MaskPasswordsBuildWrapper) step2.getDelegate();
-                List<MaskPasswordsBuildWrapper.VarMaskRegex> regexes = bw2.getVarMaskRegexes();
+                List<MaskPasswordsConfig.VarMaskRegexEntry> regexes = bw2.getVarMaskRegexes();
                 assertEquals(1, regexes.size());
-                MaskPasswordsBuildWrapper.VarMaskRegex regex = regexes.get(0);
-                assertEquals("foobar", regex.getRegex());
+                MaskPasswordsConfig.VarMaskRegexEntry regex = regexes.get(0);
+                assertEquals("foobar", regex.getRegexString());
+                assertEquals("test", regex.getName());
         });
     }
 

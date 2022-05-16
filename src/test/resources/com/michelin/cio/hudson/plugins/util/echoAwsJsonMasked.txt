@@ -1,0 +1,1 @@
++ echo { "Credentials": { "Expiration": "2021-02-06T01:39:01Z", "SecretAccessKey": "********", "AccessKeyId": "********", "SessionToken": "********" }, "AssumedRoleUser": { "AssumedRoleId": "AROA2VSRKG7RO6QH2IY4T:AWSCLI-Session", "Arn": "arn:aws:sts::733536204770:assumed-role/some-fake-role-permissions/AWSCLI-Session" } }
