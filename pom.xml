@@ -54,6 +54,13 @@
         <role>Maintainer (retired)</role>
       </roles>
     </developer>
+    <developer>
+      <id>pyieh</id>
+      <name>Pierson Yieh</name>
+      <roles>
+          <role>Maintainer</role>
+      </roles>
+    </developer>
   </developers>
 
     <repositories>
