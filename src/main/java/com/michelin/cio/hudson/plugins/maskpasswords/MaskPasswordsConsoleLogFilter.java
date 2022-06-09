@@ -65,8 +65,8 @@ public class MaskPasswordsConsoleLogFilter extends ConsoleLogFilter  implements 
       LOGGER.log(Level.FINE, "MaskPasswords IS enabled globally; decorating logger");
 
       // build our config
-      List<String> passwords = new ArrayList<String>();
-      List<String> regexes = new ArrayList<String>();
+      List<String> passwords = new ArrayList<>();
+      List<String> regexes = new ArrayList<>();
 
       // global passwords
       List<MaskPasswordsBuildWrapper.VarPasswordPair> globalVarPasswordPairs = config.getGlobalVarPasswordPairs();
