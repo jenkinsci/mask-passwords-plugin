@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>4.15</version>
+    <version>4.54</version>
   </parent>
 
   <artifactId>mask-passwords</artifactId>
@@ -15,9 +15,7 @@
   <version>3.2-SNAPSHOT</version>
 
   <properties>
-    <jenkins.version>2.272</jenkins.version>
-    <java.level>8</java.level>
-    <workflow.version>1.8</workflow.version>
+    <jenkins.version>2.361.4</jenkins.version>
     <useBeta>true</useBeta> <!-- CustomDescribableModel -->
   </properties>
 
@@ -71,8 +69,8 @@
         <dependencies>
             <dependency>
                 <groupId>io.jenkins.tools.bom</groupId>
-                <artifactId>bom-2.263.x</artifactId>
-                <version>20</version>
+                <artifactId>bom-2.361.x</artifactId>
+                <version>1775.vf0577a_a_01778</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
