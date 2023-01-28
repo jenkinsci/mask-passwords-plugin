@@ -27,7 +27,8 @@ package com.michelin.cio.hudson.plugins.maskpasswords;
 import com.google.common.annotations.VisibleForTesting;
 import com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper.VarMaskRegex;
 import com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsBuildWrapper.VarPasswordPair;
-import com.michelin.cio.hudson.plugins.util.MaskPasswordsUtil;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.ExtensionList;
@@ -48,8 +49,6 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
 import javax.annotation.concurrent.GuardedBy;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -89,16 +88,16 @@ public class MaskPasswordsConfig {
      * Contains the set of {@link ParameterValue}s whose value must be masked in
      * builds' console.
      */
-    @Nonnull
+    @NonNull
     @GuardedBy("this")
-    private transient Set<String> paramValueCache_maskedClasses = new HashSet<String>();
+    private transient Set<String> paramValueCache_maskedClasses = new HashSet<>();
     
     /**
      * Cache of values, which are not subjects for masking. 
      */
-    @Nonnull
+    @NonNull
     @GuardedBy("this")
-    private transient Set<String> paramValueCache_nonMaskedClasses = new HashSet<String>();
+    private transient Set<String> paramValueCache_nonMaskedClasses = new HashSet<>();
     
     /**
      * Users can define key/password pairs at the global level to share common
@@ -113,7 +112,7 @@ public class MaskPasswordsConfig {
     /**
      * Users can define regexes at the global level to mask in jobs.
      *
-     * <p>Never ever use this attribute directly: Use {@link #getGlobalVarMaskRegexes} to avoid
+     * <p>Never ever use this attribute directly: Use {@link #getGlobalVarMaskRegexesMap} to avoid
      * potential NPEs.</p>
      *
      * @since 2.9
@@ -132,7 +131,7 @@ public class MaskPasswordsConfig {
     private boolean globalVarEnableGlobally;
 
     public MaskPasswordsConfig() {
-        maskPasswordsParamDefClasses = new LinkedHashSet<String>();
+        maskPasswordsParamDefClasses = new LinkedHashSet<>();
         reset();
     }
     
@@ -141,10 +140,10 @@ public class MaskPasswordsConfig {
         // Reinit caches
         synchronized(this) {
             if (paramValueCache_maskedClasses == null) {
-                paramValueCache_maskedClasses = new HashSet<String>();
+                paramValueCache_maskedClasses = new HashSet<>();
             }
             if (paramValueCache_nonMaskedClasses == null) {
-                paramValueCache_nonMaskedClasses = new HashSet<String>();
+                paramValueCache_nonMaskedClasses = new HashSet<>();
             }
         }
        
@@ -209,7 +208,7 @@ public class MaskPasswordsConfig {
         saveSafeIO(this);
     }
 
-    public void removeGlobalVarMaskRegexByName(@Nonnull String name) {
+    public void removeGlobalVarMaskRegexByName(@NonNull String name) {
         if (!isGlobalVarMaskRegexesNull()) {
             VarMaskRegex r = getGlobalVarMaskRegexesMap().get(name);
             if (r != null) {
@@ -312,7 +311,7 @@ public class MaskPasswordsConfig {
      * @since 2.7
      */
     public List<VarPasswordPair> getGlobalVarPasswordPairs() {
-        List<VarPasswordPair> r = new ArrayList<VarPasswordPair>(getGlobalVarPasswordPairsList().size());
+        List<VarPasswordPair> r = new ArrayList<>(getGlobalVarPasswordPairsList().size());
 
         // deep copy
         for(VarPasswordPair varPasswordPair: getGlobalVarPasswordPairsList()) {
@@ -351,7 +350,7 @@ public class MaskPasswordsConfig {
      */
     private List<VarPasswordPair> getGlobalVarPasswordPairsList() {
         if(globalVarPasswordPairs == null) {
-            globalVarPasswordPairs = new ArrayList<VarPasswordPair>();
+            globalVarPasswordPairs = new ArrayList<>();
         }
         return globalVarPasswordPairs;
     }
@@ -359,14 +358,14 @@ public class MaskPasswordsConfig {
     /**
      * Fixes JENKINS-11514: When {@code MaskPasswordsConfig.xml} is there but was created from
      * version 2.8 (or older) of the plugin, {@link #globalVarPasswordPairs} can actually be
-     * {@code null} ==> Always use this getter to avoid NPEs.
+     * {@code null} ==&gt; Always use this getter to avoid NPEs.
      *
      * @since 2.9
      */
     @Deprecated
     public List<VarMaskRegex> getGlobalVarMaskRegexesList() {
         if(globalVarMaskRegexes == null) {
-            globalVarMaskRegexes = new ArrayList<VarMaskRegex>();
+            globalVarMaskRegexes = new ArrayList<>();
         }
         return globalVarMaskRegexes;
     }
@@ -407,10 +406,10 @@ public class MaskPasswordsConfig {
      * is its display key.</p>
      */
     public static Map<String, String> getParameterDefinitions() {
-        Map<String, String> params = new HashMap<String, String>();
+        Map<String, String> params = new HashMap<>();
 
         ExtensionList<ParameterDefinition.ParameterDescriptor> paramExtensions =
-                Jenkins.getActiveInstance().getExtensionList(ParameterDefinition.ParameterDescriptor.class);
+                Jenkins.get().getExtensionList(ParameterDefinition.ParameterDescriptor.class);
         for(ParameterDefinition.ParameterDescriptor paramExtension: paramExtensions) {
             // we need the getEnclosingClass() to drop the inner ParameterDescriptor
             // and work directly with the ParameterDefinition
@@ -435,7 +434,7 @@ public class MaskPasswordsConfig {
      *         {@code false} if the plugin is not sure, may be false-negative 
      */
     @Deprecated
-    public synchronized boolean isMasked(final @Nonnull String paramValueClassName) {
+    public synchronized boolean isMasked(final @NonNull String paramValueClassName) {
         return isMasked(null, paramValueClassName);
     }
     
@@ -449,8 +448,8 @@ public class MaskPasswordsConfig {
      *         {@code false} if the plugin is not sure, may be false-negative especially if the value is {@code null}.
      * @since TODO
      */
-    public boolean isMasked(final @CheckForNull ParameterValue value, 
-            final @Nonnull String paramValueClassName) {
+    public boolean isMasked(final @CheckForNull ParameterValue value,
+            final @NonNull String paramValueClassName) {
         
         // We always mask sensitive variables, the configuration does not matter in such case
         if (value != null && value.isSensitive()) {
@@ -489,7 +488,7 @@ public class MaskPasswordsConfig {
      * @return {@code true} if we are sure that the class has to be masked
      *         {@code false} otherwise, there is a risk of false negative due to the presumptions.
      */
-    /*package*/ synchronized boolean guessIfShouldMask(final @Nonnull String paramValueClassName) {
+    /*package*/ synchronized boolean guessIfShouldMask(final @NonNull String paramValueClassName) {
         // The only way to find parameter definition/parameter value
         // couples is to reflect the methods of parameter definition
         // classes which instantiate the parameter value.
@@ -499,7 +498,7 @@ public class MaskPasswordsConfig {
         for(String paramDefClassName: maskPasswordsParamDefClasses) {
             final Class<?> paramDefClass;
             try {
-                paramDefClass = Jenkins.getActiveInstance().getPluginManager().uberClassLoader.loadClass(paramDefClassName);
+                paramDefClass = Jenkins.get().getPluginManager().uberClassLoader.loadClass(paramDefClassName);
             } catch (ClassNotFoundException ex) {
                 LOGGER.log(Level.WARNING, "Cannot check ParamDef for masking " + paramDefClassName, ex);
                 continue;
@@ -522,7 +521,7 @@ public class MaskPasswordsConfig {
         // This class does not comply with the criteria above, but it is sensitive starting from 1.378
         final Class<?> valueClass;
         try {
-            valueClass = Jenkins.getActiveInstance().getPluginManager().uberClassLoader.loadClass(paramValueClassName);
+            valueClass = Jenkins.get().getPluginManager().uberClassLoader.loadClass(paramValueClassName);
         } catch (Exception ex) {
             // Move on. Whatever happens here, it will blow up somewhere else
             LOGGER.log(Level.FINE, "Failed to load class for the ParameterValue " + paramValueClassName, ex);
@@ -713,9 +712,9 @@ public class MaskPasswordsConfig {
                 return VarMaskRegexEntry.class.getName();
             }
 
-            @Nonnull
+            @NonNull
             @Override
-            public UninstantiatedDescribable customUninstantiate(@Nonnull UninstantiatedDescribable step) {
+            public UninstantiatedDescribable customUninstantiate(@NonNull UninstantiatedDescribable step) {
                 Map<String, ?> arguments = step.getArguments();
                 Map<String, Object> newMap1 = new HashMap<>();
                 newMap1.put("name", arguments.get("name"));
@@ -723,9 +722,9 @@ public class MaskPasswordsConfig {
                 return step.withArguments(newMap1);
             }
 
-            @Nonnull
+            @NonNull
             @Override
-            public Map<String, Object> customInstantiate(@Nonnull Map<String, Object> arguments) {
+            public Map<String, Object> customInstantiate(@NonNull Map<String, Object> arguments) {
                 Map<String, Object> newMap = new HashMap<>();
                 newMap.put("name", arguments.get("name"));
                 newMap.put("value", new VarMaskRegex((String)arguments.get("value")));

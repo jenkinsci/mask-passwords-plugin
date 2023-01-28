@@ -25,6 +25,7 @@
  */
 package com.michelin.cio.hudson.plugins.passwordparam;
 
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.EnvVars;
 import hudson.model.AbstractBuild;
@@ -32,7 +33,6 @@ import hudson.model.ParameterValue;
 import hudson.model.Run;
 import hudson.util.Secret;
 import hudson.util.VariableResolver;
-import javax.annotation.CheckForNull;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 @SuppressFBWarnings(value = "SE_NO_SERIALVERSIONID", justification = "XStream does not need Serial version ID")
