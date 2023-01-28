@@ -22,7 +22,7 @@
   </properties>
 
   <scm>
-    <connection>scm:git:git://github.com/jenkinsci/mask-passwords-plugin.git</connection>
+    <connection>scm:git:https://github.com/jenkinsci/mask-passwords-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/mask-passwords-plugin.git</developerConnection>
     <url>http://github.com/jenkinsci/mask-passwords-plugin</url>
     <tag>HEAD</tag>
