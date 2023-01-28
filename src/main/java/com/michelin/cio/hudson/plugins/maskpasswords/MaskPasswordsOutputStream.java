@@ -25,11 +25,11 @@
 
 package com.michelin.cio.hudson.plugins.maskpasswords;
 
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.console.LineTransformationOutputStream;
 import org.apache.commons.lang.StringUtils;
 
-import javax.annotation.CheckForNull;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
