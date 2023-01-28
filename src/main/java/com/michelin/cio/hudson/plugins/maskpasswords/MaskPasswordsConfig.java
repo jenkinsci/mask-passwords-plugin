@@ -446,7 +446,7 @@ public class MaskPasswordsConfig {
      * @param paramValueClassName Class key of the {@link ParameterValue} class implementation
      * @return {@code true} if the parameter value should be masked.
      *         {@code false} if the plugin is not sure, may be false-negative especially if the value is {@code null}.
-     * @since TODO
+     * @since 2.10
      */
     public boolean isMasked(final @CheckForNull ParameterValue value,
             final @NonNull String paramValueClassName) {
