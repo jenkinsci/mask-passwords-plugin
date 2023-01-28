@@ -1,11 +1,11 @@
 package com.michelin.cio.hudson.plugins.util;
 
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import org.apache.commons.lang.StringUtils;
 
-import javax.annotation.CheckForNull;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -36,7 +36,7 @@ public class MaskPasswordsUtil {
     }
 
     public static List<String> patternMatch(Pattern p, String s) {
-        return patternMatch(Arrays.asList(p), s);
+        return patternMatch(Collections.singletonList(p), s);
     }
 
     public static String secretsMask(List<String> secrets, String s, String runName) {

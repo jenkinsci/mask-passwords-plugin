@@ -31,6 +31,8 @@ import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.EnvVars;
 import hudson.Extension;
@@ -57,8 +59,6 @@ import org.jvnet.localizer.ResourceBundleHolder;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
@@ -95,8 +95,8 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
 
     @Override
     public ConsoleLogFilter createLoggerDecorator(Run<?, ?> build) {
-        List<String> allPasswords = new ArrayList<String>();  // all passwords to be masked
-        List<String> allRegexes = new ArrayList<String>(); // all regexes to be masked
+        List<String> allPasswords = new ArrayList<>();  // all passwords to be masked
+        List<String> allRegexes = new ArrayList<>(); // all regexes to be masked
         MaskPasswordsConfig config = MaskPasswordsConfig.getInstance();
 
         // global passwords
@@ -162,26 +162,21 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         private final List<String> allRegexes;
 
         FilterImpl(List<String> allPasswords, List<String> allRegexes) {
-            this.allPasswords = new ArrayList<Secret>();
-            this.allRegexes = new ArrayList<String>();
+            this.allPasswords = new ArrayList<>();
+            this.allRegexes = new ArrayList<>();
             for (String password : allPasswords) {
                 this.allPasswords.add(Secret.fromString(password));
             }
-            for (String regex : allRegexes) {
-                this.allRegexes.add(regex);
-            }
+            this.allRegexes.addAll(allRegexes);
         }
 
         @Override
         public OutputStream decorateLogger(Run run, OutputStream logger) {
-            List<String> passwords = new ArrayList<String>();
-            List<String> regexes = new ArrayList<String>();
+            List<String> passwords = new ArrayList<>();
             for (Secret password : allPasswords) {
                 passwords.add(password.getPlainText());
             }
-            for (String regex : allRegexes) {
-                regexes.add(regex);
-            }
+            List<String> regexes = new ArrayList<>(allRegexes);
             String runName = run != null ? run.getFullDisplayName() : "";
             return new MaskPasswordsOutputStream(logger, passwords, regexes, runName);
         }
@@ -215,7 +210,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
 
     @Override
     public void makeSensitiveBuildVariables(AbstractBuild build, Set<String> sensitiveVariables) {
-        final Map<String, String> variables = new TreeMap<String, String>();
+        final Map<String, String> variables = new TreeMap<>();
         makeBuildVariables(build, variables);
         sensitiveVariables.addAll(variables.keySet());
     }
@@ -297,9 +292,9 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
          * but we need Secret so that data-binding works correctly.
          */
         public static class DescriptorImpl extends Descriptor<VarPasswordPair> implements CustomDescribableModel {
-            @Nonnull
+            @NonNull
             @Override
-            public UninstantiatedDescribable customUninstantiate(@Nonnull UninstantiatedDescribable step) {
+            public UninstantiatedDescribable customUninstantiate(@NonNull UninstantiatedDescribable step) {
                 Map<String, ?> arguments = step.getArguments();
                 Map<String, Object> newMap1 = new HashMap<>();
                 newMap1.put("var", arguments.get("var"));
@@ -307,9 +302,9 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
                 return step.withArguments(newMap1);
             }
 
-            @Nonnull
+            @NonNull
             @Override
-            public Map<String, Object> customInstantiate(@Nonnull Map<String, Object> arguments) {
+            public Map<String, Object> customInstantiate(@NonNull Map<String, Object> arguments) {
                 Map<String, Object> newMap = new HashMap<>();
                 newMap.put("var", arguments.get("var"));
                 Object password = arguments.get("password");
@@ -545,7 +540,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         }
 
         public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext uc) {
-            List<VarPasswordPair> varPasswordPairs = new ArrayList<VarPasswordPair>();
+            List<VarPasswordPair> varPasswordPairs = new ArrayList<>();
             List<VarMaskRegexEntry> varMaskRegexes = new ArrayList<>();
 
             while(reader.hasMoreChildren()) {
