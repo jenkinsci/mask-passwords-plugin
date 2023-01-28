@@ -125,7 +125,7 @@ public class MaskPasswordsOutputStream extends LineTransformationOutputStream {
 
     /**
      * {@inheritDoc}
-     * @throws IOException
+     * @throws IOException on error
      */
     @Override
     public void close() throws IOException {
@@ -135,7 +135,7 @@ public class MaskPasswordsOutputStream extends LineTransformationOutputStream {
 
     /**
      * {@inheritDoc}
-     * @throws IOException
+     * @throws IOException on error
      */
     @Override
     public void flush() throws IOException {

@@ -112,7 +112,7 @@ public class MaskPasswordsConfig {
     /**
      * Users can define regexes at the global level to mask in jobs.
      *
-     * <p>Never ever use this attribute directly: Use {@link #getGlobalVarMaskRegexes} to avoid
+     * <p>Never ever use this attribute directly: Use {@link #getGlobalVarMaskRegexesMap} to avoid
      * potential NPEs.</p>
      *
      * @since 2.9
@@ -358,7 +358,7 @@ public class MaskPasswordsConfig {
     /**
      * Fixes JENKINS-11514: When {@code MaskPasswordsConfig.xml} is there but was created from
      * version 2.8 (or older) of the plugin, {@link #globalVarPasswordPairs} can actually be
-     * {@code null} ==> Always use this getter to avoid NPEs.
+     * {@code null} ==&gt; Always use this getter to avoid NPEs.
      *
      * @since 2.9
      */
