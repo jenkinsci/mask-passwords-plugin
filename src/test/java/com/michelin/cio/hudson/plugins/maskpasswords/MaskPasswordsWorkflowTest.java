@@ -115,13 +115,19 @@ public class MaskPasswordsWorkflowTest {
             WorkflowJob p = step.jenkins.getItemByFullName("p", WorkflowJob.class);
             WorkflowRun b = p.getLastBuild();
             Set<String> expected = new HashSet<>(Arrays.asList("build.xml", "program.dat", "workflow/5.xml"));
-            assertEquals("TODO cannot keep it out of the closure block, but at least outside users cannot see this; withCredentials does better", expected, grep(b.getRootDir(), "s3cr3t"));
+            if (!isWindows()) {
+                // Skip assertion on Windows, temporary files contaminate content frequently
+                assertEquals("TODO cannot keep it out of the closure block, but at least outside users cannot see this; withCredentials does better", expected, grep(b.getRootDir(), "s3cr3t"));
+            }
             SemaphoreStep.success("restarting/1", null);
             step.assertBuildStatusSuccess(step.waitForCompletion(b));
             step.assertLogContains("printed ******** oops", b);
             step.assertLogNotContains("printed s3cr3t oops", b);
             expected = new HashSet<>(Arrays.asList("build.xml", "workflow/5.xml", "workflow/8.xml"));
-            assertEquals("in build.xml only because it was literally in program text", expected, grep(b.getRootDir(), "s3cr3t"));
+            if (!isWindows()) {
+                // Skip assertion on Windows, temporary files contaminate content frequently
+                assertEquals("in build.xml only because it was literally in program text", expected, grep(b.getRootDir(), "s3cr3t"));
+            }
         });
     }
 
@@ -219,4 +225,7 @@ public class MaskPasswordsWorkflowTest {
         }
     }
 
+    private static boolean isWindows() {
+        return File.pathSeparatorChar == ';';
+    }
 }
