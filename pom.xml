@@ -17,7 +17,6 @@
   <properties>
     <jenkins.version>2.361.4</jenkins.version>
      <spotbugs.effort>Max</spotbugs.effort>
-     <spotbugs.failOnError>true</spotbugs.failOnError> 
     <changelist>999999-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/mask-passwords-plugin</gitHubRepo>
     <useBeta>true</useBeta> <!-- CustomDescribableModel -->
