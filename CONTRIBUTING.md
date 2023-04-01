@@ -1,7 +1,7 @@
 
 # Contributing to the Jenkins mask-passwords-plugin
 
-Thank you for your interest in contributing to the Jenkins "mask-password-plugin"! This guide will provide you with the necessary information to get started with contributing to the plugin.
+Thank you for your interest in contributing to the Jenkins "mask-passworda-plugin"! This guide will provide you with the necessary information to get started with contributing to the plugin.
 
 ## Getting Started 
 Before you begin contributing to the plugin, you should familiarize yourself with the plugin's source code and build process. You can find the plugin's source code on GitHub at https://github.com/jenkinsci/mask-passwords-plugin. The plugin is built using Maven, so you will need to have Maven installed on your system to build the plugin.
@@ -12,43 +12,32 @@ If you are a newcomer contributor and have any questions, please do not hesitate
 ## Contributing Code
 If you would like to contribute code to the plugin, please follow these steps:
 
-Fork the plugin's repository on GitHub.
-Clone your forked repository to your local machine.
-Make your changes to the plugin's source code.
-Test your changes to ensure that they do not introduce any new issues.
-Commit your changes and push them to your forked repository.
-Open a pull request from your forked repository to the main repository.
-Please ensure that your pull request includes a clear description of the changes you have made and the reason for making them.
+* Fork the plugin's repository on GitHub.
+* Clone your forked repository to your local machine.
+* Make your changes to the plugin's source code.
+* Test your changes to ensure that they do not introduce any new issues.
+* Commit your changes and push them to your forked repository.
+* Open a pull request from your forked repository to the main repository. Please ensure that your pull request includes a clear description of the changes you have made and the reason for making them.
 
-## Contributing Documentation
-If you would like to contribute documentation to the plugin, please follow these steps:
-
-Fork the plugin's repository on GitHub.
-Clone your forked repository to your local machine.
-Make your changes to the plugin's documentation.
-Test your changes to ensure that they are accurate and informative.
-Commit your changes and push them to your forked repository.
-Open a pull request from your forked repository to the main repository.
-Please ensure that your pull request includes a clear description of the changes you have made and the reason for making them.
 
 ## Run Locally
-- Ensure Java 8 or 11 is available.
+* Ensure Java 11 or 17 is available.
 ```console
   $ java -version	
-  ```
+  openjdk version "11.0.18" 2023-01-17
+  OpenJDK Runtime Environment Temurin-11.0.18+10 (build 11.0.18+10)
+  OpenJDK 64-Bit Server VM Temurin-11.0.18+10 (build 11.0.18+10, mixed mode)
     
     
     
- - Use the alternate Java 8.
- ```console
- $ export JAVA_HOME=`/usr/libexec/java_home -v 1.8`	
-$ echo $JAVA_HOME	
-/Library/Java/JavaVirtualMachines/jdk1.8.0_252.jdk/Contents/Home
-```
-- Ensure Maven > 3.6.0 is installed and included in the PATH environment variable.
+- Ensure Maven > 3.8.4 or newer is installed and included in the PATH environment variable.
 ```console
-$ mvn --version	
-```
+$ mvn --version
+Apache Maven 3.9.1 (2e178502fcdbffc201671fb2537d0cb4b4cc58f8)
+Maven home: /opt/apache-maven-3.9.1
+Java version: 11.0.18, vendor: Eclipse Adoptium, runtime: /opt/jdk-11
+Default locale: en_US, platform encoding: UTF-8
+OS name: "linux", version: "4.18.0-425.13.1.el8_7.x86_64", arch: "amd64", family: "unix"
 ## CLI
 - Use the following command
 ```console
@@ -60,16 +49,8 @@ INFO: Jenkins is fully up and running
 ```
 - Open http://localhost:8080/jenkins/ to test the plugin locally.
 
-Some plugins use multi module maven builds and you may need to change your hpi:run command to be run from the child directory, and build the other modules first.
-
-``` console
-$ mvn install -P quick-build
-$ mvn -f plugin hpi:run
-```
-
-
 ## Reporting Issues
- If you encounter any issues with the plugin, please report them on the plugin's issue tracker on GitHub at https://github.com/jenkinsci/mask-passwords-plugin/issues. When reporting an issue, please include as much information as possible, including a description of the issue, steps to reproduce the issue, and any relevant logs or error messages.
+ If you encounter any issues with the plugin, please report them on the [Jira issue tracker](https://www.jenkins.io/participate/report-issue/redirect/#15761) . When reporting an issue, please include as much information as possible, including a description of the issue, steps to reproduce the issue, and any relevant logs or error messages.  ["How to report an issue"](https://www.jenkins.io/participate/report-issue/) provides more details on the information needed for a better bug report.
 
 
 
