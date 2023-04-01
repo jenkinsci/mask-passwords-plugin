@@ -25,13 +25,13 @@ If you would like to contribute code to the plugin, please follow these steps:
 
 * Ensure Java 11 or 17 is available.
 ```console
-  $ java -version
-  openjdk version "11.0.18" 2023-01-17
-  OpenJDK Runtime Environment Temurin-11.0.18+10 (build 11.0.18+10)
-  OpenJDK 64-Bit Server VM Temurin-11.0.18+10 (build 11.0.18+10, mixed mode)
+$ java -version
+openjdk version "11.0.18" 2023-01-17
+OpenJDK Runtime Environment Temurin-11.0.18+10 (build 11.0.18+10)
+OpenJDK 64-Bit Server VM Temurin-11.0.18+10 (build 11.0.18+10, mixed mode)
 ```
 
-- Ensure Maven > 3.8.4 or newer is installed and included in the PATH environment variable.
+* Ensure Maven > 3.8.4 or newer is installed and included in the PATH environment variable.
 ```console
 $ mvn --version
 Apache Maven 3.9.1 (2e178502fcdbffc201671fb2537d0cb4b4cc58f8)
