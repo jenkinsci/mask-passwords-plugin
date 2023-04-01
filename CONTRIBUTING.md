@@ -1,6 +1,6 @@
 # Contributing to the mask passwords plugin
 
-Thank you for your interest in contributing to the Jenkins "mask-passworda-plugin"! This guide will provide you with the necessary information to get started with contributing to the plugin.
+Thank you for your interest in contributing to the Jenkins "mask passwords plugin"! This guide will provide you with the necessary information to contribute to the plugin.
 
 ## Getting Started
 
@@ -29,6 +29,7 @@ If you would like to contribute code to the plugin, please follow these steps:
   openjdk version "11.0.18" 2023-01-17
   OpenJDK Runtime Environment Temurin-11.0.18+10 (build 11.0.18+10)
   OpenJDK 64-Bit Server VM Temurin-11.0.18+10 (build 11.0.18+10, mixed mode)
+```
 
 - Ensure Maven > 3.8.4 or newer is installed and included in the PATH environment variable.
 ```console
