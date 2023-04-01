@@ -1,4 +1,4 @@
-# Contributing to the Jenkins mask-passwords-plugin
+# Contributing to the mask passwords plugin
 
 Thank you for your interest in contributing to the Jenkins "mask-passworda-plugin"! This guide will provide you with the necessary information to get started with contributing to the plugin.
 
