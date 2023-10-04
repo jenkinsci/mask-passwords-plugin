@@ -132,10 +132,51 @@ public class MaskPasswordsWorkflowTest {
     }
 
     @Test
+    public void basicsRegex() throws Exception {
+        story.then(step -> {
+            WorkflowJob p = step.jenkins.createProject(WorkflowJob.class, "p");
+            p.setDefinition(new CpsFlowDefinition("node {wrap([$class: 'MaskPasswordsBuildWrapper', varMaskRegexes: [[key: 'REGEX', value: 's3cr3t']]]) {semaphore 'restarting'; echo 'printed s3cr3t oops'}}", true));
+            WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+            SemaphoreStep.waitForStart("restarting/1", b);
+        });
+
+        story.then(step -> {
+            WorkflowJob p = step.jenkins.getItemByFullName("p", WorkflowJob.class);
+            WorkflowRun b = p.getLastBuild();
+            Set<String> expected = new HashSet<>(Arrays.asList("build.xml", "program.dat", "workflow/5.xml"));
+            if (!isWindows()) {
+                // Skip assertion on Windows, temporary files contaminate content frequently
+                assertEquals("TODO cannot keep it out of the closure block, but at least outside users cannot see this; withCredentials does better", expected, grep(b.getRootDir(), "s3cr3t"));
+            }
+            SemaphoreStep.success("restarting/1", null);
+            step.assertBuildStatusSuccess(step.waitForCompletion(b));
+            step.assertLogContains("printed ******** oops", b);
+            step.assertLogNotContains("printed s3cr3t oops", b);
+            expected = new HashSet<>(Arrays.asList("build.xml", "workflow/5.xml", "workflow/8.xml"));
+            if (!isWindows()) {
+                // Skip assertion on Windows, temporary files contaminate content frequently
+                assertEquals("in build.xml only because it was literally in program text", expected, grep(b.getRootDir(), "s3cr3t"));
+            }
+        });
+    }
+
+    @Test
     public void noWorkspaceRequired() {
         story.then(r -> {
             WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "p");
             p.setDefinition(new CpsFlowDefinition("maskPasswords(varPasswordPairs: [[var: 'PASSWORD', password: 's3cr3t']]) {echo 'printed s3cr3t oops'}", true));
+            WorkflowRun b = p.scheduleBuild2(0).waitForStart();
+            r.assertBuildStatusSuccess(r.waitForCompletion(b));
+            r.assertLogContains("printed ******** oops", b);
+            r.assertLogNotContains("printed s3cr3t oops", b);
+        });
+    }
+
+    @Test
+    public void noWorkspaceRequiredRegex() {
+        story.then(r -> {
+            WorkflowJob p = r.jenkins.createProject(WorkflowJob.class, "p");
+            p.setDefinition(new CpsFlowDefinition("maskPasswords(varMaskRegexes: [[key: 'REGEX', value: 's3cr3t']]) {echo 'printed s3cr3t oops'}", true));
             WorkflowRun b = p.scheduleBuild2(0).waitForStart();
             r.assertBuildStatusSuccess(r.waitForCompletion(b));
             r.assertLogContains("printed ******** oops", b);
