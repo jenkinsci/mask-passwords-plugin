@@ -108,7 +108,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
         // global regexes
         List<MaskPasswordsConfig.VarMaskRegexEntry> globalVarMaskRegexes = config.getGlobalVarMaskRegexesU();
         for(MaskPasswordsConfig.VarMaskRegexEntry globalVarMaskRegex: globalVarMaskRegexes) {
-            allRegexes.add(globalVarMaskRegex.getValue().getRegex());
+            allRegexes.add(globalVarMaskRegex.getValue());
         }
 
         // job's passwords
@@ -531,7 +531,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
                         continue;
                     }
                     writer.startNode(VAR_MASK_REGEX_NODE);
-                    writer.addAttribute(REGEX_NAME, varMaskRegex.getName());
+                    writer.addAttribute(REGEX_NAME, varMaskRegex.getKey());
                     writer.addAttribute(REGEX_ATT, varMaskRegex.getRegexString());
                     writer.endNode();
                 }
