@@ -89,7 +89,7 @@ public class MaskPasswordsWorkflowTest {
         story.then(step -> {
                 MaskPasswordsBuildWrapper bw1 = new MaskPasswordsBuildWrapper(
                   null,
-                  Collections.singletonList(new MaskPasswordsConfig.VarMaskRegexEntry("test", new MaskPasswordsBuildWrapper.VarMaskRegex("foobar")))
+                  Collections.singletonList(new MaskPasswordsConfig.VarMaskRegexEntry("test", "foobar"))
                 );
                 CoreWrapperStep step1 = new CoreWrapperStep(bw1);
                 CoreWrapperStep step2 = new StepConfigTester(step).configRoundTrip(step1);
@@ -98,7 +98,7 @@ public class MaskPasswordsWorkflowTest {
                 assertEquals(1, regexes.size());
                 MaskPasswordsConfig.VarMaskRegexEntry regex = regexes.get(0);
                 assertEquals("foobar", regex.getRegexString());
-                assertEquals("test", regex.getName());
+                assertEquals("test", regex.getKey());
         });
     }
 

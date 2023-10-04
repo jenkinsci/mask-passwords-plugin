@@ -655,18 +655,18 @@ public class MaskPasswordsConfig {
         }
 
         public String getKey() {
-            return this.getName();
+            return this.key;
         }
 
         public void setKey(String key) {
             this.key = key;
         }
 
-        public VarMaskRegex getValue() {
-            return this.getRegex();
+        public String getValue() {
+            return this.getRegex().getRegex();
         }
-        public void setValue(VarMaskRegex regex) {
-            this.setRegex(regex);
+        public void setValue(String regex) {
+            this.setRegex(new VarMaskRegex(regex));
         }
 
         public String getRegexString() {
@@ -684,7 +684,7 @@ public class MaskPasswordsConfig {
         @SuppressFBWarnings(value = "CN_IDIOM_NO_SUPER_CALL", justification = "We do not expect anybody to use this class."
                 + "If they do, they must override clone() as well")
         public Object clone() {
-            return new VarMaskRegexEntry(this.getName(), this.getRegex());
+            return new VarMaskRegexEntry(this.getKey(), this.getRegex());
         }
 
         @Override
@@ -702,7 +702,7 @@ public class MaskPasswordsConfig {
                 return false;
             } else {
                 VarMaskRegexEntry otherE = (VarMaskRegexEntry) other;
-                return (this.getName().equals(otherE.getName())) && this.getRegex().equals(otherE.getRegex());
+                return (this.getKey().equals(otherE.getKey())) && this.getRegex().equals(otherE.getRegex());
             }
         }
 
@@ -717,7 +717,7 @@ public class MaskPasswordsConfig {
             public UninstantiatedDescribable customUninstantiate(@NonNull UninstantiatedDescribable step) {
                 Map<String, ?> arguments = step.getArguments();
                 Map<String, Object> newMap1 = new HashMap<>();
-                newMap1.put("name", arguments.get("name"));
+                newMap1.put("key", arguments.get("key"));
                 newMap1.put("value", arguments.get("value"));
                 return step.withArguments(newMap1);
             }
@@ -726,8 +726,8 @@ public class MaskPasswordsConfig {
             @Override
             public Map<String, Object> customInstantiate(@NonNull Map<String, Object> arguments) {
                 Map<String, Object> newMap = new HashMap<>();
-                newMap.put("name", arguments.get("name"));
-                newMap.put("value", new VarMaskRegex((String)arguments.get("value")));
+                newMap.put("key", arguments.get("key"));
+                newMap.put("value", String.valueOf(arguments.get("value")));
                 return newMap;
             }
         }
