@@ -120,8 +120,11 @@ public class MaskPasswordsConfig {
      * Deprecated in favor of globalVarMaskRegexesMap which has label names mapped to value's for better identification
      */
     @Deprecated
+    @SuppressFBWarnings(value = "PA_PUBLIC_PRIMITIVE_ATTRIBUTE", justification = "Retain API compatibility")
     public List<VarMaskRegex> globalVarMaskRegexes;
+    @SuppressFBWarnings(value = "PA_PUBLIC_PRIMITIVE_ATTRIBUTE", justification = "Retain API compatibility")
     public List<VarMaskRegexEntry> globalVarMaskRegexesU;
+    @SuppressFBWarnings(value = "PA_PUBLIC_PRIMITIVE_ATTRIBUTE", justification = "Retain API compatibility")
     public HashMap<String, VarMaskRegex> globalVarMaskRegexesMap;
     /**
      * Whether or not to enable the plugin globally on ALL BUILDS.
