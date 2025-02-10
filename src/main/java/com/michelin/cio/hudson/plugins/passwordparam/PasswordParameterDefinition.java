@@ -26,7 +26,7 @@ package com.michelin.cio.hudson.plugins.passwordparam;
 
 import hudson.model.ParameterValue;
 import net.sf.json.JSONObject;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 import org.kohsuke.stapler.DataBoundConstructor;
 import hudson.Extension;
 import hudson.model.ParameterDefinition;
@@ -47,7 +47,7 @@ public class PasswordParameterDefinition extends ParameterDefinition {
     }
 
     @Override
-    public ParameterValue createValue(StaplerRequest req) {
+    public ParameterValue createValue(StaplerRequest2 req) {
         String[] value = req.getParameterValues(getName());
         if(value == null) {
             return getDefaultParameterValue();
@@ -61,7 +61,7 @@ public class PasswordParameterDefinition extends ParameterDefinition {
     }
 
     @Override
-    public PasswordParameterValue createValue(StaplerRequest req, JSONObject formData) {
+    public PasswordParameterValue createValue(StaplerRequest2 req, JSONObject formData) {
         PasswordParameterValue value = req.bindJSON(PasswordParameterValue.class, formData);
         value.setDescription(getDescription());
         return value;
