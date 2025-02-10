@@ -57,7 +57,7 @@ import org.jenkinsci.plugins.structs.describable.UninstantiatedDescribable;
 import org.jvnet.localizer.Localizable;
 import org.jvnet.localizer.ResourceBundleHolder;
 import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -383,7 +383,7 @@ public final class MaskPasswordsBuildWrapper extends SimpleBuildWrapper {
          * @since 2.5
          */
         @Override
-        public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
+        public boolean configure(StaplerRequest2 req, JSONObject json) throws FormException {
             try {
                 getConfig().clear();
 

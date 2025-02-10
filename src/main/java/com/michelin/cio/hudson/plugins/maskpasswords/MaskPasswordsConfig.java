@@ -47,7 +47,7 @@ import org.jenkinsci.plugins.structs.describable.UninstantiatedDescribable;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.io.File;
@@ -508,8 +508,8 @@ public class MaskPasswordsConfig {
             }
 
             tryProcessMethod(paramDefClass, "getDefaultParameterValue", true);
-            tryProcessMethod(paramDefClass, "createValue", true, StaplerRequest.class, JSONObject.class);
-            tryProcessMethod(paramDefClass, "createValue", true, StaplerRequest.class);
+            tryProcessMethod(paramDefClass, "createValue", true, StaplerRequest2.class, JSONObject.class);
+            tryProcessMethod(paramDefClass, "createValue", true, StaplerRequest2.class);
             tryProcessMethod(paramDefClass, "createValue", true, CLICommand.class, String.class);
             // This custom implementation is not a part of the API, but let's try it
             tryProcessMethod(paramDefClass, "createValue", false, String.class);

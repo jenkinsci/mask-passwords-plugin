@@ -123,7 +123,7 @@ public class MaskPasswordsWorkflowTest {
             step.assertBuildStatusSuccess(step.waitForCompletion(b));
             step.assertLogContains("printed ******** oops", b);
             step.assertLogNotContains("printed s3cr3t oops", b);
-            expected = new HashSet<>(Arrays.asList("build.xml", "workflow/5.xml", "workflow/8.xml"));
+            expected = new HashSet<>(Arrays.asList("build.xml", "workflow-completed/flowNodeStore.xml"));
             if (!isWindows()) {
                 // Skip assertion on Windows, temporary files contaminate content frequently
                 assertEquals("in build.xml only because it was literally in program text", expected, grep(b.getRootDir(), "s3cr3t"));
@@ -152,7 +152,7 @@ public class MaskPasswordsWorkflowTest {
             step.assertBuildStatusSuccess(step.waitForCompletion(b));
             step.assertLogContains("printed ******** oops", b);
             step.assertLogNotContains("printed s3cr3t oops", b);
-            expected = new HashSet<>(Arrays.asList("build.xml", "workflow/5.xml", "workflow/8.xml"));
+            expected = new HashSet<>(Arrays.asList("build.xml", "workflow-completed/flowNodeStore.xml"));
             if (!isWindows()) {
                 // Skip assertion on Windows, temporary files contaminate content frequently
                 assertEquals("in build.xml only because it was literally in program text", expected, grep(b.getRootDir(), "s3cr3t"));
