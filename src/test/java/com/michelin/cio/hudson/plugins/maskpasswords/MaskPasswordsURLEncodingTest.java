@@ -24,83 +24,40 @@
 
 package com.michelin.cio.hudson.plugins.maskpasswords;
 
-import org.apache.commons.io.FileUtils;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
-import org.jenkinsci.plugins.workflow.test.steps.SemaphoreStep;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runners.model.Statement;
-import org.jvnet.hudson.test.BuildWatcher;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.Issue;
-import org.jvnet.hudson.test.RestartableJenkinsRule;
+import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-import java.io.File;
-import java.io.IOException;
 import java.net.URLEncoder;
-import java.util.Set;
-import java.util.TreeSet;
+import java.nio.charset.StandardCharsets;
 
 @Issue("JENKINS-34908")
-public class MaskPasswordsURLEncodingTest {
+@WithJenkins
+class MaskPasswordsURLEncodingTest {
 
-    public static final String THE_SECRET = "#s3cr3t";
-    @ClassRule
-    public static BuildWatcher buildWatcher = new BuildWatcher();
-    @Rule
-    public RestartableJenkinsRule story = new RestartableJenkinsRule();
+    private static final String THE_SECRET = "#s3cr3t";
 
-    @Before
-    public void dropCache() {
+    private JenkinsRule j;
+
+    @BeforeEach
+    void dropCache(JenkinsRule j) {
+        this.j = j;
         MaskPasswordsConfig.getInstance().reset();
     }
-    
-    @Test
-    public void passwordMaskedEncoded() throws Exception {
-        story.addStep(new Statement() {
-            @Override
-            public void evaluate() throws Throwable {
-                WorkflowJob p = story.j.jenkins.createProject(WorkflowJob.class, "p");
-                p.setDefinition(new CpsFlowDefinition("node {wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[var: 'PASSWORD', password: '" + THE_SECRET + "']]]) {semaphore 'restarting'; echo 'printed unencoded " + THE_SECRET + " oops'; echo 'printed encoded " + URLEncoder.encode(THE_SECRET, "UTF-8" ) + " oops'}}", true));
-                WorkflowRun b = p.scheduleBuild2(0).waitForStart();
-                SemaphoreStep.waitForStart("restarting/1", b);
-            }
-        });
-        story.addStep(new Statement() {
-            @Override
-            public void evaluate() throws Throwable {
-                WorkflowJob p = story.j.jenkins.getItemByFullName("p", WorkflowJob.class);
-                WorkflowRun b = p.getLastBuild();
-                SemaphoreStep.success("restarting/1", null);
-                story.j.assertBuildStatusSuccess(story.j.waitForCompletion(b));
-                story.j.assertLogContains("printed unencoded ******** oops", b);
-                story.j.assertLogContains("printed encoded ******** oops", b);
-            }
-        });
-    }
 
-    // Copied from credentials-binding-plugin; perhaps belongs in JenkinsRule?
-    private static Set<String> grep(File dir, String text) throws IOException {
-        Set<String> matches = new TreeSet<String>();
-        grep(dir, text, "", matches);
-        return matches;
-    }
-    private static void grep(File dir, String text, String prefix, Set<String> matches) throws IOException {
-        File[] kids = dir.listFiles();
-        if (kids == null) {
-            return;
-        }
-        for (File kid : kids) {
-            String qualifiedName = prefix + kid.getName();
-            if (kid.isDirectory()) {
-                grep(kid, text, qualifiedName + "/", matches);
-            } else if (kid.isFile() && FileUtils.readFileToString(kid).contains(text)) {
-                matches.add(qualifiedName);
-            }
-        }
+    @Test
+    void passwordMaskedEncoded() throws Throwable {
+        WorkflowJob p = j.jenkins.createProject(WorkflowJob.class, "p");
+        p.setDefinition(new CpsFlowDefinition("node {wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[var: 'PASSWORD', password: '" + THE_SECRET + "']]]) {echo 'printed unencoded " + THE_SECRET + " oops'; echo 'printed encoded " + URLEncoder.encode(THE_SECRET, StandardCharsets.UTF_8) + " oops'}}", true));
+
+        WorkflowRun b = j.assertBuildStatusSuccess(p.scheduleBuild2(0));
+        j.assertLogContains("printed unencoded ******** oops", b);
+        j.assertLogContains("printed encoded ******** oops", b);
     }
 
 }
