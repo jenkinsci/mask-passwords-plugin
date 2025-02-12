@@ -31,62 +31,59 @@ import hudson.model.BuildListener;
 import hudson.model.Cause;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
-import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Result;
 import hudson.util.Secret;
-import java.io.IOException;
-import java.util.Collections;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.jvnet.hudson.test.BuildWatcher;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.TestBuilder;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
+
+import java.util.Collections;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests of {@link PasswordParameterValue} and {@link PasswordParameterDefinition}.
+ *
  * @author bpmarinho
  */
-public class PasswordParameterTest {
-    
-    @ClassRule
-    public static BuildWatcher buildWatcher = new BuildWatcher();
-    
-    @Rule
-    public JenkinsRule j = new JenkinsRule();
-    
-    @Before
-    public void dropCache() {
+@WithJenkins
+class PasswordParameterTest {
+
+    private JenkinsRule j;
+
+    @BeforeEach
+    void dropCache(JenkinsRule j) {
+        this.j = j;
         MaskPasswordsConfig.getInstance().reset();
     }
-    
+
     @Test
     @Issue("JENKINS-41955")
-    public void shouldMaskPasswordParameterClassByDefault() {
-        Assert.assertTrue( PasswordParameterValue.class + " must be masked by default",
-            MaskPasswordsConfig.getInstance().isMasked(PasswordParameterValue.class.getName()));
+    void shouldMaskPasswordParameterClassByDefault() {
+        assertTrue(MaskPasswordsConfig.getInstance().isMasked(PasswordParameterValue.class.getName()),
+                PasswordParameterValue.class + " must be masked by default");
     }
-    
+
     @Test
     @Issue("JENKINS-41955")
-    public void shouldMaskPasswordParameterValueByDefault() {
+    void shouldMaskPasswordParameterValueByDefault() {
         PasswordParameterDefinition d = new PasswordParameterDefinition("FOO", "BAR");
         ParameterValue created = d.createValue(Secret.fromString("hello"));
-        
+
         // We pass the non-existent class name in order to ensure that the Value metadata check is enough
-        Assert.assertTrue( PasswordParameterValue.class + " must be masked by default",
-            MaskPasswordsConfig.getInstance().isMasked(created, "nonExistent"));
+        assertTrue(MaskPasswordsConfig.getInstance().isMasked(created, "nonExistent"),
+                PasswordParameterValue.class + " must be masked by default");
     }
-    
+
     @Test
     @Issue("JENKINS-41955")
-    public void passwordParameterShouldBeMaskedInFreestyleProject() throws Exception {
+    void passwordParameterShouldBeMaskedInFreestyleProject() throws Exception {
         final String clearTextPassword = "myClearTextPassword";
         final String logWithClearTextPassword = "printed " + clearTextPassword + " oops";
         final String logWithHiddenPassword = "printed ******** oops";
@@ -100,20 +97,20 @@ public class PasswordParameterTest {
         project.addProperty(parametersDefinitionProperty);
 
         MaskPasswordsBuildWrapper maskPasswordsBuildWrapper
-                = new MaskPasswordsBuildWrapper(Collections.<MaskPasswordsBuildWrapper.VarPasswordPair>emptyList());
+                = new MaskPasswordsBuildWrapper(Collections.emptyList());
         project.getBuildWrappersList().add(maskPasswordsBuildWrapper);
 
         project.getBuildersList().add(new TestBuilder() {
             @Override
-            public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+            public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) {
                 listener.getLogger().println(logWithClearTextPassword);
                 build.setResult(Result.SUCCESS);
                 return true;
             }
         });
 
-        FreeStyleBuild build = project.scheduleBuild2(0, new Cause.UserIdCause(), 
-                new ParametersAction(passwordParameterDefinition.createValue(Secret.fromString(clearTextPassword))))
+        FreeStyleBuild build = project.scheduleBuild2(0, new Cause.UserIdCause(),
+                        new ParametersAction(passwordParameterDefinition.createValue(Secret.fromString(clearTextPassword))))
                 .get();
         j.assertBuildStatusSuccess(j.waitForCompletion(build));
         j.assertLogContains(logWithHiddenPassword, build);
