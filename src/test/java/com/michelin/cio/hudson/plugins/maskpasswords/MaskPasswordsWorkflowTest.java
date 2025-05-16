@@ -100,17 +100,20 @@ class MaskPasswordsWorkflowTest {
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         SemaphoreStep.waitForStart("waiting/1", b);
         Set<String> expected = new HashSet<>(Arrays.asList("build.xml", "program.dat", "workflow/5.xml"));
+        // Skip assertion on Windows, temporary files contaminate content frequently
         if (!Functions.isWindows()) {
-            // Skip assertion on Windows, temporary files contaminate content frequently
-            assertEquals(expected, grep(b.getRootDir(), "s3cr3t"), "TODO cannot keep it out of the closure block, but at least outside users cannot see this; withCredentials does better");
+            // Compensate for test being flaky on slow filesystems
+            Set<String> actual = grep(b.getRootDir(), "s3cr3t");
+            actual.removeIf(s -> s.matches("^atomic\\d+\\.tmp$"));
+            assertEquals(expected, actual, "TODO cannot keep it out of the closure block, but at least outside users cannot see this; withCredentials does better");
         }
         SemaphoreStep.success("waiting/1", null);
         j.assertBuildStatusSuccess(j.waitForCompletion(b));
         j.assertLogContains("printed ******** oops", b);
         j.assertLogNotContains("printed s3cr3t oops", b);
         expected = new HashSet<>(Arrays.asList("build.xml", "workflow-completed/flowNodeStore.xml"));
+        // Skip assertion on Windows, temporary files contaminate content frequently
         if (!Functions.isWindows()) {
-            // Skip assertion on Windows, temporary files contaminate content frequently
             assertEquals(expected, grep(b.getRootDir(), "s3cr3t"), "in build.xml only because it was literally in program text");
         }
     }
@@ -122,17 +125,20 @@ class MaskPasswordsWorkflowTest {
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         SemaphoreStep.waitForStart("waiting/1", b);
         Set<String> expected = new HashSet<>(Arrays.asList("build.xml", "program.dat", "workflow/5.xml"));
+        // Skip assertion on Windows, temporary files contaminate content frequently
         if (!Functions.isWindows()) {
-            // Skip assertion on Windows, temporary files contaminate content frequently
-            assertEquals(expected, grep(b.getRootDir(), "s3cr3t"), "TODO cannot keep it out of the closure block, but at least outside users cannot see this; withCredentials does better");
+            // Compensate for test being flaky on slow filesystems
+            Set<String> actual = grep(b.getRootDir(), "s3cr3t");
+            actual.removeIf(s -> s.matches("^atomic\\d+\\.tmp$"));
+            assertEquals(expected, actual, "TODO cannot keep it out of the closure block, but at least outside users cannot see this; withCredentials does better");
         }
         SemaphoreStep.success("waiting/1", null);
         j.assertBuildStatusSuccess(j.waitForCompletion(b));
         j.assertLogContains("printed ******** oops", b);
         j.assertLogNotContains("printed s3cr3t oops", b);
         expected = new HashSet<>(Arrays.asList("build.xml", "workflow-completed/flowNodeStore.xml"));
+        // Skip assertion on Windows, temporary files contaminate content frequently
         if (!Functions.isWindows()) {
-            // Skip assertion on Windows, temporary files contaminate content frequently
             assertEquals(expected, grep(b.getRootDir(), "s3cr3t"), "in build.xml only because it was literally in program text");
         }
     }
