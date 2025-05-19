@@ -55,7 +55,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
 
+import static org.awaitility.Awaitility.await;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Issue("JENKINS-27392")
@@ -102,7 +105,9 @@ class MaskPasswordsWorkflowTest {
         Set<String> expected = new HashSet<>(Arrays.asList("build.xml", "program.dat", "workflow/5.xml"));
         if (!Functions.isWindows()) {
             // Skip assertion on Windows, temporary files contaminate content frequently
-            assertEquals(expected, grep(b.getRootDir(), "s3cr3t"), "TODO cannot keep it out of the closure block, but at least outside users cannot see this; withCredentials does better");
+            await().atMost(5, TimeUnit.SECONDS)
+                    .alias("TODO cannot keep it out of the closure block, but at least outside users cannot see this; withCredentials does better")
+                    .until(() -> grep(b.getRootDir(), "s3cr3t"), equalTo(expected));
         }
         SemaphoreStep.success("waiting/1", null);
         j.assertBuildStatusSuccess(j.waitForCompletion(b));
@@ -111,7 +116,9 @@ class MaskPasswordsWorkflowTest {
         expected = new HashSet<>(Arrays.asList("build.xml", "workflow-completed/flowNodeStore.xml"));
         if (!Functions.isWindows()) {
             // Skip assertion on Windows, temporary files contaminate content frequently
-            assertEquals(expected, grep(b.getRootDir(), "s3cr3t"), "in build.xml only because it was literally in program text");
+            await().atMost(5, TimeUnit.SECONDS)
+                    .alias("in build.xml only because it was literally in program text")
+                    .until(() -> grep(b.getRootDir(), "s3cr3t"), equalTo(expected));
         }
     }
 
@@ -124,7 +131,9 @@ class MaskPasswordsWorkflowTest {
         Set<String> expected = new HashSet<>(Arrays.asList("build.xml", "program.dat", "workflow/5.xml"));
         if (!Functions.isWindows()) {
             // Skip assertion on Windows, temporary files contaminate content frequently
-            assertEquals(expected, grep(b.getRootDir(), "s3cr3t"), "TODO cannot keep it out of the closure block, but at least outside users cannot see this; withCredentials does better");
+            await().atMost(5, TimeUnit.SECONDS)
+                    .alias("TODO cannot keep it out of the closure block, but at least outside users cannot see this; withCredentials does better")
+                    .until(() -> grep(b.getRootDir(), "s3cr3t"), equalTo(expected));
         }
         SemaphoreStep.success("waiting/1", null);
         j.assertBuildStatusSuccess(j.waitForCompletion(b));
@@ -133,7 +142,9 @@ class MaskPasswordsWorkflowTest {
         expected = new HashSet<>(Arrays.asList("build.xml", "workflow-completed/flowNodeStore.xml"));
         if (!Functions.isWindows()) {
             // Skip assertion on Windows, temporary files contaminate content frequently
-            assertEquals(expected, grep(b.getRootDir(), "s3cr3t"), "in build.xml only because it was literally in program text");
+            await().atMost(5, TimeUnit.SECONDS)
+                    .alias("in build.xml only because it was literally in program text")
+                    .until(() -> grep(b.getRootDir(), "s3cr3t"), equalTo(expected));
         }
     }
 
