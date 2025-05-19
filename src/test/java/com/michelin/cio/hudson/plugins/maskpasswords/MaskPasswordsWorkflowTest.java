@@ -58,6 +58,7 @@ import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Issue("JENKINS-27392")
@@ -101,27 +102,23 @@ class MaskPasswordsWorkflowTest {
         p.setDefinition(new CpsFlowDefinition("node {wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[var: 'PASSWORD', password: 's3cr3t']]]) {semaphore 'waiting'; echo 'printed s3cr3t oops'}}", true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         SemaphoreStep.waitForStart("waiting/1", b);
-        Set<String> expected1 = new HashSet<>(Arrays.asList("build.xml", "program.dat", "workflow/5.xml"));
+        Set<String> expected = new HashSet<>(Arrays.asList("build.xml", "program.dat", "workflow/5.xml"));
         if (!Functions.isWindows()) {
             // Skip assertion on Windows, temporary files contaminate content frequently
             await().atMost(5, TimeUnit.SECONDS)
                     .alias("TODO cannot keep it out of the closure block, but at least outside users cannot see this; withCredentials does better")
-                    .until(() ->
-                            expected1.equals(grep(b.getRootDir(), "s3cr3t"))
-                    );
+                    .until(() -> grep(b.getRootDir(), "s3cr3t"), equalTo(expected));
         }
         SemaphoreStep.success("waiting/1", null);
         j.assertBuildStatusSuccess(j.waitForCompletion(b));
         j.assertLogContains("printed ******** oops", b);
         j.assertLogNotContains("printed s3cr3t oops", b);
-        Set<String> expected2 = new HashSet<>(Arrays.asList("build.xml", "workflow-completed/flowNodeStore.xml"));
+        expected = new HashSet<>(Arrays.asList("build.xml", "workflow-completed/flowNodeStore.xml"));
         if (!Functions.isWindows()) {
             // Skip assertion on Windows, temporary files contaminate content frequently
             await().atMost(5, TimeUnit.SECONDS)
                     .alias("in build.xml only because it was literally in program text")
-                    .until(() ->
-                            expected2.equals(grep(b.getRootDir(), "s3cr3t"))
-                    );
+                    .until(() -> grep(b.getRootDir(), "s3cr3t"), equalTo(expected));
         }
     }
 
@@ -131,27 +128,23 @@ class MaskPasswordsWorkflowTest {
         p.setDefinition(new CpsFlowDefinition("node {wrap([$class: 'MaskPasswordsBuildWrapper', varMaskRegexes: [[key: 'REGEX', value: 's3cr3t']]]) {semaphore 'waiting'; echo 'printed s3cr3t oops'}}", true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
         SemaphoreStep.waitForStart("waiting/1", b);
-        Set<String> expected1 = new HashSet<>(Arrays.asList("build.xml", "program.dat", "workflow/5.xml"));
+        Set<String> expected = new HashSet<>(Arrays.asList("build.xml", "program.dat", "workflow/5.xml"));
         if (!Functions.isWindows()) {
             // Skip assertion on Windows, temporary files contaminate content frequently
             await().atMost(5, TimeUnit.SECONDS)
                     .alias("TODO cannot keep it out of the closure block, but at least outside users cannot see this; withCredentials does better")
-                    .until(() ->
-                            expected1.equals(grep(b.getRootDir(), "s3cr3t"))
-                    );
+                    .until(() -> grep(b.getRootDir(), "s3cr3t"), equalTo(expected));
         }
         SemaphoreStep.success("waiting/1", null);
         j.assertBuildStatusSuccess(j.waitForCompletion(b));
         j.assertLogContains("printed ******** oops", b);
         j.assertLogNotContains("printed s3cr3t oops", b);
-        Set<String> expected2 = new HashSet<>(Arrays.asList("build.xml", "workflow-completed/flowNodeStore.xml"));
+        expected = new HashSet<>(Arrays.asList("build.xml", "workflow-completed/flowNodeStore.xml"));
         if (!Functions.isWindows()) {
             // Skip assertion on Windows, temporary files contaminate content frequently
             await().atMost(5, TimeUnit.SECONDS)
                     .alias("in build.xml only because it was literally in program text")
-                    .until(() ->
-                            expected2.equals(grep(b.getRootDir(), "s3cr3t"))
-                    );
+                    .until(() -> grep(b.getRootDir(), "s3cr3t"), equalTo(expected));
         }
     }
 
