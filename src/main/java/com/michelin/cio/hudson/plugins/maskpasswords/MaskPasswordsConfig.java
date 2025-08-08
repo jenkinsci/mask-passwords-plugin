@@ -41,7 +41,7 @@ import hudson.model.ParameterDefinition.ParameterDescriptor;
 import hudson.model.ParameterValue;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.plugins.structs.describable.CustomDescribableModel;
 import org.jenkinsci.plugins.structs.describable.UninstantiatedDescribable;
 import org.kohsuke.accmod.Restricted;
