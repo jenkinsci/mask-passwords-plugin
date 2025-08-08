@@ -1,7 +1,7 @@
 package com.michelin.cio.hudson.plugins.util;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
