@@ -32,6 +32,8 @@ import hudson.Extension;
 import hudson.model.ParameterDefinition;
 import hudson.util.Secret;
 import org.jvnet.localizer.ResourceBundleHolder;
+import org.jenkinsci.Symbol;
+
 
 public class PasswordParameterDefinition extends ParameterDefinition {
 
@@ -68,6 +70,7 @@ public class PasswordParameterDefinition extends ParameterDefinition {
     }
 
     @Extension
+    @Symbol("nonStoredPassword")
     public final static class ParameterDescriptorImpl extends ParameterDescriptor {
 
         @Override
