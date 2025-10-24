@@ -51,6 +51,37 @@ output:
 
 ![](docs/images/console-after.png)
 
+# Pipeline Support
+
+This plugin provides the `nonStoredPassword` parameter type for Jenkins pipelines, allowing you to define password parameters that are only provided at runtime and not stored in the job configuration. This is ideal for sensitive credentials that should not persist in your pipeline code.
+
+**Declarative Pipeline Example:**
+```groovy
+pipeline {
+    agent none
+    parameters {
+        nonStoredPassword(name: 'MY_PASSWORD', description: 'Database password')
+    }
+    stages {
+        stage('Deploy') {
+            steps {
+                echo 'Using password parameter'
+            }
+        }
+    }
+}
+```
+
+**Scripted Pipeline Example:**
+```groovy
+node {
+    properties([parameters([nonStoredPassword(name: 'API_KEY', description: 'API authentication key')])])
+    stage('Build') {
+        echo 'Using API key parameter'
+    }
+}
+```
+
 # User guide
 
 First, go to Jenkins' main configuration screen (**Manage Jenkins** \>
