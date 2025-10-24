@@ -33,12 +33,12 @@ class ScriptedPipelineTest {
     void test_nonStoredPassword_in_scripted_pipeline() throws Exception {
         WorkflowJob job = j.jenkins.createProject(WorkflowJob.class, "test-scripted-nonStoredPassword");
         job.setDefinition(new CpsFlowDefinition(SCRIPT_WITH_NON_STORED_PASSWORD, false));
-        
+
         // First run: defines the parameter for the job
         WorkflowRun run1 = job.scheduleBuild2(0).get();
         j.waitForCompletion(run1);
         j.assertBuildStatusSuccess(run1);
-        
+
         // Second run: accepts the parameter value
         PasswordParameterValue paramValue = new PasswordParameterValue("MY_PASSWORD", Secret.fromString("testPassword123"), "Test password parameter");
         WorkflowRun run2 = job.scheduleBuild2(0, new ParametersAction(paramValue)).get();
