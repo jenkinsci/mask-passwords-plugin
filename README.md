@@ -37,6 +37,52 @@ Once done, new builds will have the passwords masked from the console output:
 
 ![](docs/images/console-after.png)
 
+## Pipeline Support
+
+The [declarative directive generator](https://www.jenkins.io/doc/book/pipeline/getting-started/#directive-generator) allows the Pipeline author to interactively define the parameters of a Pipeline.
+
+This plugin provides the `nonStoredPassword` parameter type for Jenkins Pipelines, allowing you to define password parameters that are only provided at runtime and not stored in the job configuration.
+This is ideal for sensitive credentials that should not persist in your pipeline code.
+
+The plugin also provides the [`maskPasswords` block](https://www.jenkins.io/doc/pipeline/steps/mask-passwords/) that can wrap sections of Pipeline code where the value of a password should be masked in build logs.
+
+**Declarative Pipeline Example:**
+```groovy
+pipeline {
+    agent none
+    parameters {
+        nonStoredPassword(name: 'MY_PASSWORD', description: 'Database password')
+    }
+    stages {
+        stage('Deploy') {
+            steps {
+                maskPasswords(varPasswordPairs: [[var: 'MY_PASSWORD']], varMaskRegexes: []) {
+                    echo "Masked password parameter ${MY_PASSWORD}"
+                }
+                echo "Unmasked password parameter ${MY_PASSWORD}"
+            }
+        }
+    }
+}
+```
+
+The [Pipeline Syntax Snippet Generator](https://www.jenkins.io/redirect/pipeline-snippet-generator) guides the user to define parameters of a scripted Pipeline as properties.
+
+The plugin also provides the [`maskPasswords` block](https://www.jenkins.io/doc/pipeline/steps/mask-passwords/) that can wrap sections of Pipeline code where the value of a password should be masked in build logs.
+
+**Scripted Pipeline Example:**
+```groovy
+node {
+    properties([parameters([nonStoredPassword(name: 'API_KEY', description: 'API key')])])
+    stage('Build') {
+        maskPasswords(varPasswordPairs: [[var: 'API_KEY']], varMaskRegexes: []) {
+            echo "Masked password parameter ${API_KEY}"
+        }
+        echo "Unmasked password parameter ${API_KEY}"
+    }
+}
+```
+
 ## User guide
 
 First, go to Jenkins' main configuration screen (**Manage Jenkins** \> **Configure System**) and select,
@@ -50,7 +96,7 @@ Then, for a specific job, activate the **Mask passwords** option in the **Build 
 
 1.  All the password parameters defined for the job will be automatically hidden.
 2.  For each other kind of password (that is, static ones) that may appear in the console output,
-    add an entry (by clicking on the **Add** button) and set the **Password** field.  
+    add an entry (by clicking on the **Add** button) and set the **Password** field.
     You may additionally set the **Name** field.
     If you do so, the password will then be available as a standard variable.
     It is then possible to refer to this password using this variable rather than keying it in a field which is not ciphered.
