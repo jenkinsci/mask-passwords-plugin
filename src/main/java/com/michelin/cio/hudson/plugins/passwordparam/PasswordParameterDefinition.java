@@ -34,7 +34,6 @@ import hudson.util.Secret;
 import org.jvnet.localizer.ResourceBundleHolder;
 import org.jenkinsci.Symbol;
 
-
 public class PasswordParameterDefinition extends ParameterDefinition {
 
     @DataBoundConstructor
