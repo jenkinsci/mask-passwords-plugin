@@ -37,6 +37,25 @@ Once done, new builds will have the passwords masked from the console output:
 
 ![](docs/images/console-after.png)
 
+## User guide
+
+First, go to Jenkins' main configuration screen (**Manage Jenkins** \> **Configure System**) and select,
+in the **Mask Passwords - Configuration** section, which kind of build parameters have to be automatically masked from the console output:
+
+![](docs/images/global-settings.png)
+
+Notice that, as of version 2.7, you can also define global passwords (defined as pairs of name/password) that can be accessed across all jobs.
+
+Then, for a specific job, activate the **Mask passwords** option in the **Build Environment** section to mask passwords from the console:
+
+1.  All the password parameters defined for the job will be automatically hidden.
+2.  For each other kind of password (that is, static ones) that may appear in the console output,
+    add an entry (by clicking on the **Add** button) and set the **Password** field.
+    You may additionally set the **Name** field.
+    If you do so, the password will then be available as a standard variable.
+    It is then possible to refer to this password using this variable rather than keying it in a field which is not ciphered.
+    Take a look at the screenshots above for an example.
+
 ## Pipeline Support
 
 The [declarative directive generator](https://www.jenkins.io/doc/book/pipeline/getting-started/#directive-generator) allows the Pipeline author to interactively define the parameters of a Pipeline.
@@ -82,25 +101,6 @@ node {
     }
 }
 ```
-
-## User guide
-
-First, go to Jenkins' main configuration screen (**Manage Jenkins** \> **Configure System**) and select,
-in the **Mask Passwords - Configuration** section, which kind of build parameters have to be automatically masked from the console output:
-
-![](docs/images/global-settings.png)
-
-Notice that, as of version 2.7, you can also define global passwords (defined as pairs of name/password) that can be accessed across all jobs.
-
-Then, for a specific job, activate the **Mask passwords** option in the **Build Environment** section to mask passwords from the console:
-
-1.  All the password parameters defined for the job will be automatically hidden.
-2.  For each other kind of password (that is, static ones) that may appear in the console output,
-    add an entry (by clicking on the **Add** button) and set the **Password** field.
-    You may additionally set the **Name** field.
-    If you do so, the password will then be available as a standard variable.
-    It is then possible to refer to this password using this variable rather than keying it in a field which is not ciphered.
-    Take a look at the screenshots above for an example.
 
 ## Release Notes
 
